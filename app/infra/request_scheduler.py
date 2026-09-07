@@ -6,8 +6,6 @@ import asyncio
 from collections.abc import Callable
 from typing import Any, TypeVar
 
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
-
 from app.infra.rate_limiter import AsyncRateLimiter
 
 
@@ -36,7 +34,6 @@ class RequestScheduler:
         """Run a sync function on a worker thread with retries."""
 
         async with self._semaphore:
-            await self._rate_limiter.acquire()
             return await self._run_with_retry(func, *args, **kwargs)
 
     @property
@@ -45,11 +42,14 @@ class RequestScheduler:
 
         return self._min_delay_ms
 
-    @retry(
-        reraise=True,
-        retry=retry_if_exception_type(Exception),
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=0.5, min=0.5, max=4),
-    )
     async def _run_with_retry(self, func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
-        return await asyncio.to_thread(func, *args, **kwargs)
+        """Run a sync provider call with bounded, rate-limited retries."""
+        for attempt in range(3):
+            await self._rate_limiter.acquire()
+            try:
+                return await asyncio.to_thread(func, *args, **kwargs)
+            except Exception:
+                if attempt == 2:
+                    raise
+                await asyncio.sleep(min(0.5 * (2**attempt), 4.0))
+        raise RuntimeError("request retry loop exited unexpectedly")
