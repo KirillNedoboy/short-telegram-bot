@@ -111,6 +111,25 @@ def test_rotation_universe_remains_frozen_when_current_universe_drifts(tmp_path)
     )
 
 
+def test_open_rotation_is_reused_when_current_universe_fingerprint_drifts(tmp_path):
+    db = Database(f"sqlite:///{tmp_path / 'rotation-drift.sqlite'}")
+    db.create_all()
+    repo = BotRepository(db)
+    repo.set_runtime_metadata(runtime_instance_id="runtime-1", config_fingerprint="c" * 64)
+    first = repo.prepare_market_scan_rotation(
+        rotation_started_at=datetime.now(timezone.utc),
+        exchange_symbols=["AUSDT", "BUSDT"],
+        eligible_symbols=["AUSDT"],
+    )
+    second = repo.prepare_market_scan_rotation(
+        rotation_started_at=datetime.now(timezone.utc) + timedelta(seconds=1),
+        exchange_symbols=["AUSDT", "BUSDT", "CUSDT"],
+        eligible_symbols=["AUSDT", "BUSDT"],
+    )
+
+    assert second == first
+
+
 def test_coverage_percent_is_bounded():
     assert coverage_percent(600, 500) == 100.0
     assert coverage_percent(0, 0) is None

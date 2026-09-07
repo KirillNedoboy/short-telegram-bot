@@ -462,8 +462,6 @@ class BotRepository:
                 if (
                     rotation is not None
                     and rotation.runtime_instance_id == runtime_id
-                    and rotation.exchange_universe_fingerprint == exchange_fp
-                    and rotation.eligible_universe_fingerprint == eligible_fp
                 ):
                     return rotation.rotation_id
                 if rotation is not None:
