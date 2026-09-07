@@ -91,6 +91,7 @@ from app.signals.trapped_longs import (
     TRAPPED_LONGS_MODEL_VERSION,
     TRAPPED_LONGS_REVERSAL,
     evaluate_trapped_longs_reversal,
+    advance_trapped_longs_lifecycle,
     trapped_longs_attempt_id,
     trapped_longs_root_event_id,
 )
@@ -1358,6 +1359,50 @@ class ShortSignalBot:
         root_id = trapped_longs_root_event_id(features.symbol, state.event_id)
         attempt_id = trapped_longs_attempt_id(features.symbol, state.event_id)
         evaluation_time = datetime.now(timezone.utc)
+        root_created_at = state.event_start_time or state.event_high_time or features.asof
+        breakout_at = state.event_high_time or root_created_at
+        lifecycle = advance_trapped_longs_lifecycle(
+            root_created_at=root_created_at,
+            breakout_at=breakout_at,
+            observed_at=features.asof,
+            event_revision=1,
+            breakout_confirmed="breakout_not_confirmed" not in evaluation.veto_reasons,
+            oi_confirmed="oi_missing" not in evaluation.veto_reasons and "oi_below_threshold" not in evaluation.veto_reasons,
+            closed_candles=int(evaluation.metadata.get("closed_structural_candles") or 0),
+            close_below_reference=bool(evaluation.metadata.get("close_below_breakout_reference")),
+            failed_retest=bool(evaluation.metadata.get("failed_retest_confirmed")),
+            no_new_high=bool(evaluation.metadata.get("no_new_high")),
+            liquidity_ok=not any(reason in evaluation.veto_reasons for reason in {"liquidity_unavailable", "liquidity_incomplete", "liquidity_block"}),
+            rejection_ok="rejection_below_threshold" not in evaluation.veto_reasons,
+            max_lifetime_minutes=int(getattr(self._config, "trapped_longs_max_lifetime_minutes", 15)),
+        )
+        self._repository.upsert_shadow_entry_attempt(
+            attempt_id=attempt_id,
+            root_event_id=root_id,
+            observed_at=evaluation_time,
+            local_retest_high=features.last_high,
+            breakdown_level=float(evaluation.metadata.get("breakout_reference") or 0.0),
+            attempt_state="ACTIONABLE" if lifecycle.state == "ADMITTED" else lifecycle.state,
+            attempt_trigger="trapped_longs_reversal",
+            confirmation_expires_at=breakout_at + timedelta(minutes=int(getattr(self._config, "trapped_longs_max_lifetime_minutes", 15))),
+            event_revision=lifecycle.event_revision,
+            runtime_instance_id=self._runtime_instance_id,
+            model_version=TRAPPED_LONGS_MODEL_VERSION,
+            max_attempts_per_root_event=1,
+        )
+        if lifecycle.state == "ADMITTED" and evaluation.actionable:
+            self._repository.transition_shadow_entry_attempt(
+                attempt_id=attempt_id,
+                root_event_id=root_id,
+                event_revision=lifecycle.event_revision,
+                evaluation_id=None,
+                new_state="ACTIONABLE",
+                reason="trapped_longs_conditions_met",
+                observed_at=evaluation_time,
+                market_asof=features.asof,
+                runtime_instance_id=self._runtime_instance_id,
+                model_version=TRAPPED_LONGS_MODEL_VERSION,
+            )
         evaluation_id = self._repository.record_climax_evaluation(
             evaluation_time=evaluation_time,
             symbol=features.symbol,
