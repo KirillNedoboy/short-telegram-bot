@@ -802,6 +802,12 @@ class ShortSignalBot:
                 self._repository, "prepare_market_scan_rotation", None
             )
             telemetry = getattr(self._scanner, "last_universe_telemetry", None)
+            rotation_exchange_symbols = (
+                list(telemetry.exchange_symbols) if telemetry is not None else []
+            )
+            rotation_eligible_symbols = (
+                list(telemetry.eligible_symbols) if telemetry is not None else []
+            )
             if prepare_rotation is not None:
                 if telemetry is not None:
                     self._shadow_rotation_id = (
@@ -811,6 +817,22 @@ class ShortSignalBot:
                             eligible_symbols=list(telemetry.eligible_symbols),
                         )
                         or "unknown"
+                    )
+            rotation_universe_reader = getattr(
+                self._repository, "rotation_universe", None
+            )
+            if (
+                self._shadow_rotation_id != "unknown"
+                and callable(rotation_universe_reader)
+            ):
+                universe_reader = cast(
+                    Callable[[str], tuple[list[str], list[str]] | None],
+                    rotation_universe_reader,
+                )
+                frozen_universe = universe_reader(self._shadow_rotation_id)
+                if frozen_universe is not None:
+                    rotation_exchange_symbols, rotation_eligible_symbols = (
+                        frozen_universe
                     )
             shortlist = self._scanner.shortlist(snapshots)
             preferred_symbols = [snapshot.symbol for snapshot in shortlist]
@@ -829,7 +851,7 @@ class ShortSignalBot:
                 already_scheduled = scheduled_reader(self._shadow_rotation_id)
                 if already_scheduled is not None:
                     symbols = select_rotation_batch(
-                        eligible_symbols=telemetry.eligible_symbols,
+                        eligible_symbols=rotation_eligible_symbols,
                         already_scheduled=already_scheduled,
                         preferred_symbols=preferred_symbols,
                         batch_size=self._config.shortlist_size,
@@ -929,9 +951,14 @@ class ShortSignalBot:
                 coverage_result = record_coverage(
                     cycle_started_at=cycle_started_at,
                     cycle_completed_at=datetime.now(timezone.utc),
-                    exchange_symbols=list(universe.exchange_symbols),
-                    eligible_symbols=list(universe.eligible_symbols),
-                    excluded=list(universe.excluded),
+                    exchange_symbols=rotation_exchange_symbols,
+                    eligible_symbols=rotation_eligible_symbols,
+                    excluded=[
+                        (symbol, reason)
+                        for symbol, reason in universe.excluded
+                        if str(symbol).upper()
+                        in {str(item).upper() for item in rotation_exchange_symbols}
+                    ],
                     scheduled_symbols=list(symbols),
                     symbol_results=symbol_results,
                     candidate_symbols=len(decisions),

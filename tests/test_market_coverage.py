@@ -93,6 +93,24 @@ def test_rotation_state_read_failure_is_not_treated_as_empty_rotation(tmp_path):
     assert repo.rotation_scheduled_symbols("rotation-1") is None
 
 
+def test_rotation_universe_remains_frozen_when_current_universe_drifts(tmp_path):
+    db = Database(f"sqlite:///{tmp_path / 'rotation-universe.sqlite'}")
+    db.create_all()
+    repo = BotRepository(db)
+    repo.set_runtime_metadata(runtime_instance_id="runtime-1", config_fingerprint="c" * 64)
+    result = _record(
+        repo,
+        ["AUSDT", "BUSDT", "CUSDT"],
+        ["AUSDT"],
+        [{"symbol": "AUSDT", "terminal_status": "SCANNED_OK", "reason_code": "SCANNED_OK"}],
+    )
+
+    assert repo.rotation_universe(result["rotation_id"]) == (
+        ["AUSDT", "BUSDT", "CUSDT", "EXCLUDEDUSDT"],
+        ["AUSDT", "BUSDT", "CUSDT"],
+    )
+
+
 def test_coverage_percent_is_bounded():
     assert coverage_percent(600, 500) == 100.0
     assert coverage_percent(0, 0) is None

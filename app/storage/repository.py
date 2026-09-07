@@ -188,7 +188,11 @@ class BotRepository:
                         eligible_universe_size=len(eligible),
                         exchange_universe_fingerprint=exchange_fp,
                         eligible_universe_fingerprint=eligible_fp,
-                        details_json={"excluded_reason_codes": {}},
+                        details_json={
+                            "excluded_reason_codes": {},
+                            "rotation_exchange_symbols": exchange,
+                            "rotation_eligible_symbols": eligible,
+                        },
                     )
                     session.add(rotation)
                     session.flush()
@@ -403,6 +407,8 @@ class BotRepository:
                     "reason_counts": reason_counts,
                     "failed_symbols": sorted(failed),
                     "skipped_symbols": sorted(skipped),
+                    "rotation_exchange_symbols": exchange,
+                    "rotation_eligible_symbols": eligible,
                 }
                 if (
                     len(covered) == len(eligible)
@@ -478,7 +484,11 @@ class BotRepository:
                     eligible_universe_size=len(eligible),
                     exchange_universe_fingerprint=exchange_fp,
                     eligible_universe_fingerprint=eligible_fp,
-                    details_json={"excluded_reason_codes": {}},
+                    details_json={
+                        "excluded_reason_codes": {},
+                        "rotation_exchange_symbols": exchange,
+                        "rotation_eligible_symbols": eligible,
+                    },
                 )
                 session.add(rotation)
                 session.flush()
@@ -507,6 +517,28 @@ class BotRepository:
                 return {str(symbol).upper() for symbol in rows}
         except Exception:
             logger.exception("market coverage rotation state read failed")
+            return None
+
+    def rotation_universe(
+        self, rotation_id: str
+    ) -> tuple[list[str], list[str]] | None:
+        """Return the immutable exchange/eligible snapshot for an open rotation."""
+        try:
+            with self._db.session() as session:
+                rotation = session.get(MarketScanRotationModel, rotation_id)
+                if rotation is None:
+                    return None
+                details = rotation.details_json or {}
+                exchange = details.get("rotation_exchange_symbols")
+                eligible = details.get("rotation_eligible_symbols")
+                if not isinstance(exchange, list) or not isinstance(eligible, list):
+                    return None
+                return (
+                    sorted({str(symbol).upper() for symbol in exchange if symbol}),
+                    sorted({str(symbol).upper() for symbol in eligible if symbol}),
+                )
+        except Exception:
+            logger.exception("market coverage rotation universe read failed")
             return None
 
     def record_market_scan_cycle_operational(
