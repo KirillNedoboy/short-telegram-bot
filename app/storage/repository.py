@@ -80,6 +80,17 @@ _TERMINAL_ATTEMPT_STATES = {
 }
 
 
+def _is_valid_lifecycle_attempt_values(
+    *,
+    attempt_created_at: datetime | None,
+    confirmation_expires_at: datetime | None,
+) -> bool:
+    """Born-expired rows remain history, never valid lifecycle attempts."""
+    if attempt_created_at is None or confirmation_expires_at is None:
+        return True
+    return confirmation_expires_at > attempt_created_at
+
+
 class BotRepository:
     """Persist and restore event, signal, and analytics data."""
 
@@ -2405,6 +2416,14 @@ class BotRepository:
                     session.connection().exec_driver_sql("BEGIN IMMEDIATE")
                 model = session.get(ClimaxEntryAttemptModel, attempt_id)
                 if model is None:
+                    if (
+                        attempt_state not in _TERMINAL_ATTEMPT_STATES
+                        and not _is_valid_lifecycle_attempt_values(
+                            attempt_created_at=observed_at,
+                            confirmation_expires_at=confirmation_expires_at,
+                        )
+                    ):
+                        return False
                     if max_attempts_per_root_event is not None:
                         existing_count = (
                             session.scalar(
@@ -2412,7 +2431,12 @@ class BotRepository:
                                     func.count(ClimaxEntryAttemptModel.attempt_id)
                                 ).where(
                                     ClimaxEntryAttemptModel.root_event_id
-                                    == root_event_id
+                                    == root_event_id,
+                                    or_(
+                                        ClimaxEntryAttemptModel.confirmation_expires_at.is_(None),
+                                        ClimaxEntryAttemptModel.confirmation_expires_at
+                                        > ClimaxEntryAttemptModel.attempt_created_at,
+                                    ),
                                 )
                             )
                             or 0
@@ -2706,6 +2730,11 @@ class BotRepository:
                 .where(
                     ClimaxEntryAttemptModel.root_event_id == root_event_id,
                     ClimaxEntryAttemptModel.attempt_closed_at.is_(None),
+                    or_(
+                        ClimaxEntryAttemptModel.confirmation_expires_at.is_(None),
+                        ClimaxEntryAttemptModel.confirmation_expires_at
+                        > ClimaxEntryAttemptModel.attempt_created_at,
+                    ),
                 )
                 .order_by(ClimaxEntryAttemptModel.attempt_created_at.desc())
                 .limit(1)

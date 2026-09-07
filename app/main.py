@@ -1418,40 +1418,40 @@ class ShortSignalBot:
             )
             state.event_features_snapshot = snapshot
             self._state_store.save(state)
-            attempt_state = (
-                "EXPIRED"
-                if lifecycle_shadow.expired
-                else "SHADOW_ACTIONABLE"
-                if lifecycle_shadow.state == "FALLBACK_READY"
-                else "RETEST_IN_PROGRESS"
-            )
-            attempt_persisted = self._repository.upsert_shadow_entry_attempt(
-                attempt_id=lifecycle_attempt_id,
-                root_event_id=root_event_id,
-                observed_at=features.asof,
-                local_retest_high=lifecycle_shadow.latest_high,
-                breakdown_level=float(
-                    lifecycle_metadata.get("breakout_reference")
-                    or lifecycle_shadow.latest_high * 0.995
-                ),
-                attempt_state=attempt_state,
-                attempt_trigger="volume_climax_lifecycle",
-                confirmation_expires_at=lifecycle_shadow.confirmation_started_at
-                + timedelta(
-                    minutes=self._config.volume_climax_confirmation_window_minutes
-                ),
-                close_reason=lifecycle_shadow.veto_reasons[0]
-                if lifecycle_shadow.expired and lifecycle_shadow.veto_reasons
-                else None,
-                event_revision=lifecycle_shadow.event_revision,
-                runtime_instance_id=self._runtime_instance_id,
-                model_version="climax-lifecycle-v1-shadow",
-                max_attempts_per_root_event=self._config.climax_max_attempts_per_root_event,
-            )
+            attempt_persisted = False
+            if not lifecycle_shadow.expired:
+                attempt_persisted = self._repository.upsert_shadow_entry_attempt(
+                    attempt_id=lifecycle_attempt_id,
+                    root_event_id=root_event_id,
+                    observed_at=features.asof,
+                    local_retest_high=lifecycle_shadow.latest_high,
+                    breakdown_level=float(
+                        lifecycle_metadata.get("breakout_reference")
+                        or lifecycle_shadow.latest_high * 0.995
+                    ),
+                    attempt_state=(
+                        "SHADOW_ACTIONABLE"
+                        if lifecycle_shadow.state == "FALLBACK_READY"
+                        else "RETEST_IN_PROGRESS"
+                    ),
+                    attempt_trigger="volume_climax_lifecycle",
+                    confirmation_expires_at=lifecycle_shadow.confirmation_started_at
+                    + timedelta(
+                        minutes=self._config.volume_climax_confirmation_window_minutes
+                    ),
+                    event_revision=lifecycle_shadow.event_revision,
+                    runtime_instance_id=self._runtime_instance_id,
+                    model_version="climax-lifecycle-v1-shadow",
+                    max_attempts_per_root_event=self._config.climax_max_attempts_per_root_event,
+                )
             if not attempt_persisted:
                 lifecycle_attempt_id = None
                 shadow_attempt_id = None
-            if attempt_state == "SHADOW_ACTIONABLE" and attempt_persisted:
+            if (
+                not lifecycle_shadow.expired
+                and lifecycle_shadow.state == "FALLBACK_READY"
+                and attempt_persisted
+            ):
                 self._repository.transition_shadow_entry_attempt(
                     attempt_id=lifecycle_attempt_id,
                     root_event_id=root_event_id,
