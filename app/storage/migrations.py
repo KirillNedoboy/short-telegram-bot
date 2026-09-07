@@ -322,6 +322,7 @@ def _run_migration(
         previous_version = _get_schema_version(connection)
         _ensure_supported_version(previous_version)
         user_tables = _user_tables(connection)
+        _ensure_trapped_longs_provenance_constraint(connection)
 
         if previous_version == LEGACY_VERSION and not user_tables:
             _create_fresh_schema(connection, include_shadow_v2=include_shadow_v2)
@@ -367,6 +368,76 @@ def _run_migration(
         )
 
     return _with_transaction(bind, operation)
+
+
+def _ensure_trapped_longs_provenance_constraint(connection: Connection) -> None:
+    """Upgrade the immutable provenance CHECK constraint in-place for SQLite."""
+    if not inspect(connection).has_table("signal_provenance"):
+        return
+    ddl = connection.execute(
+        text("SELECT sql FROM sqlite_master WHERE type='table' AND name='signal_provenance'")
+    ).scalar_one_or_none()
+    if ddl is None or "TRAPPED_LONGS_REVERSAL" in str(ddl):
+        return
+    connection.exec_driver_sql("ALTER TABLE signal_provenance RENAME TO signal_provenance_legacy")
+    connection.exec_driver_sql(
+        """CREATE TABLE signal_provenance (
+            signal_id INTEGER NOT NULL PRIMARY KEY,
+            strategy_family VARCHAR(64) NOT NULL,
+            strategy_branch VARCHAR(64) NOT NULL,
+            event_id VARCHAR(128) NOT NULL,
+            root_event_id VARCHAR(128),
+            decision_evaluation_id INTEGER,
+            admission_evaluation_id INTEGER,
+            code_version VARCHAR(64) NOT NULL,
+            config_hash VARCHAR(64) NOT NULL,
+            runtime_instance_id VARCHAR(64) NOT NULL,
+            runtime_started_at DATETIME NOT NULL,
+            decision_at DATETIME NOT NULL,
+            signal_created_at DATETIME NOT NULL,
+            decision_entry_price FLOAT,
+            decision_event_high FLOAT,
+            decision_distance_from_high FLOAT,
+            provenance_anomaly VARCHAR(64),
+            CONSTRAINT ck_signal_provenance_strategy_branch CHECK (
+                strategy_branch IN ('BASELINE_PULLBACK', 'VOLUME_CLIMAX_UNWIND',
+                'LOW_VOLUME_EXTENSION_FAILURE', 'TRAPPED_LONGS_REVERSAL')
+            ),
+            CONSTRAINT ck_signal_provenance_strategy_shape CHECK (
+                (strategy_branch = 'BASELINE_PULLBACK' AND strategy_family = 'BASELINE_PULLBACK'
+                 AND root_event_id IS NULL AND decision_evaluation_id IS NULL
+                 AND admission_evaluation_id IS NULL)
+                OR (strategy_branch IN ('VOLUME_CLIMAX_UNWIND', 'LOW_VOLUME_EXTENSION_FAILURE')
+                 AND strategy_family = 'CLIMAX_EXHAUSTION' AND root_event_id IS NOT NULL
+                 AND decision_evaluation_id IS NOT NULL)
+                OR (strategy_branch = 'TRAPPED_LONGS_REVERSAL'
+                 AND strategy_family = 'TRAPPED_LONGS_REVERSAL' AND root_event_id IS NOT NULL
+                 AND decision_evaluation_id IS NOT NULL)
+            ),
+            FOREIGN KEY(signal_id) REFERENCES signals(id) ON DELETE CASCADE,
+            FOREIGN KEY(decision_evaluation_id) REFERENCES climax_evaluations(id),
+            FOREIGN KEY(admission_evaluation_id) REFERENCES climax_evaluations(id)
+        )"""
+    )
+    columns = "signal_id, strategy_family, strategy_branch, event_id, root_event_id, decision_evaluation_id, admission_evaluation_id, code_version, config_hash, runtime_instance_id, runtime_started_at, decision_at, signal_created_at, decision_entry_price, decision_event_high, decision_distance_from_high, provenance_anomaly"
+    connection.exec_driver_sql(
+        f"INSERT INTO signal_provenance ({columns}) SELECT {columns} FROM signal_provenance_legacy"
+    )
+    connection.exec_driver_sql("DROP TABLE signal_provenance_legacy")
+    for name, column in (
+        ("ix_signal_provenance_strategy_branch", "strategy_branch"),
+        ("ix_signal_provenance_event_id", "event_id"),
+        ("ix_signal_provenance_root_event_id", "root_event_id"),
+        ("ix_signal_provenance_decision_evaluation_id", "decision_evaluation_id"),
+        ("ix_signal_provenance_admission_evaluation_id", "admission_evaluation_id"),
+        ("ix_signal_provenance_config_hash", "config_hash"),
+        ("ix_signal_provenance_runtime_instance_id", "runtime_instance_id"),
+        ("ix_signal_provenance_decision_at", "decision_at"),
+        ("ix_signal_provenance_provenance_anomaly", "provenance_anomaly"),
+    ):
+        connection.exec_driver_sql(
+            f"CREATE INDEX IF NOT EXISTS {name} ON signal_provenance ({column})"
+        )
 
 
 def _create_fresh_schema(connection: Connection, *, include_shadow_v2: bool) -> None:

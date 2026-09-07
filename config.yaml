@@ -57,8 +57,8 @@ watch_max_per_cycle: 5
 baseline_live_delivery_enabled: true
 volume_climax_live_delivery_enabled: true
 low_volume_live_delivery_enabled: true
-trapped_longs_reversal_enabled: false
-trapped_longs_live_delivery_enabled: false
+trapped_longs_reversal_enabled: true
+trapped_longs_live_delivery_enabled: true
 trapped_longs_min_oi_change_15m_pct: 1.0
 trapped_longs_min_closed_candles: 2
 trapped_longs_max_lifetime_minutes: 15

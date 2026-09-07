@@ -38,6 +38,8 @@ def _decision(*, strategy_type: str, strategy_subtype: str | None = None, signal
         (_decision(strategy_type="BASELINE_PULLBACK"), AppConfig(baseline_live_delivery_enabled=False), False),
         (_decision(strategy_type="CLIMAX_EXHAUSTION", strategy_subtype="VOLUME_CLIMAX_UNWIND"), AppConfig(volume_climax_live_delivery_enabled=False), False),
         (_decision(strategy_type="CLIMAX_EXHAUSTION", strategy_subtype="LOW_VOLUME_EXTENSION_FAILURE"), AppConfig(low_volume_live_delivery_enabled=False), False),
+        (_decision(strategy_type="TRAPPED_LONGS_REVERSAL", strategy_subtype="TRAPPED_LONGS_REVERSAL"), AppConfig(trapped_longs_live_delivery_enabled=True), True),
+        (_decision(strategy_type="TRAPPED_LONGS_REVERSAL", strategy_subtype="TRAPPED_LONGS_REVERSAL"), AppConfig(trapped_longs_live_delivery_enabled=False), False),
         (_decision(strategy_type="UNKNOWN"), AppConfig(), False),
         (_decision(strategy_type="BASELINE_PULLBACK", signal_type=SignalType.WATCH), AppConfig(send_watch_to_telegram=False), False),
     ],

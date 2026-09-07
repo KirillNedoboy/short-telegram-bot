@@ -122,6 +122,7 @@ def _provenance_anomaly(decision: SignalDecision) -> str | None:
     if decision.strategy_subtype not in {
         "VOLUME_CLIMAX_UNWIND",
         "LOW_VOLUME_EXTENSION_FAILURE",
+        "TRAPPED_LONGS_REVERSAL",
     }:
         return None
     high = decision.strategy_metadata.get("event_high")
@@ -1340,6 +1341,115 @@ class ShortSignalBot:
             return None
         return evaluate_trapped_longs_reversal(state, features, frame_1m, self._config)
 
+    async def _evaluate_and_send_trapped_longs(
+        self, state: EventState, features: SymbolFeatures, frame_1m: pd.DataFrame
+    ) -> SignalDecision | None:
+        """Run the independent trapped-longs contour without old bundle selection."""
+        if not getattr(self._config, "trapped_longs_reversal_enabled", False):
+            return None
+        if not state.event_id:
+            return None
+        snapshot = dict(state.event_features_snapshot or {})
+        if "breakout_reference" not in snapshot and state.event_high:
+            snapshot["breakout_reference"] = float(state.event_high) * 0.995
+            state.event_features_snapshot = snapshot
+            self._state_store.save(state)
+        evaluation = self.evaluate_trapped_longs_reversal(state, features, frame_1m)
+        root_id = trapped_longs_root_event_id(features.symbol, state.event_id)
+        attempt_id = trapped_longs_attempt_id(features.symbol, state.event_id)
+        evaluation_time = datetime.now(timezone.utc)
+        evaluation_id = self._repository.record_climax_evaluation(
+            evaluation_time=evaluation_time,
+            symbol=features.symbol,
+            strategy=TRAPPED_LONGS_REVERSAL,
+            subtype_candidate=evaluation.subtype or TRAPPED_LONGS_REVERSAL,
+            model_version=TRAPPED_LONGS_MODEL_VERSION,
+            event_id=root_id,
+            event_high=evaluation.metadata.get("event_high"),
+            event_high_time=state.event_high_time,
+            event_detected_at=state.event_start_time,
+            candidate_added_at=None,
+            candidate_age_sec=None,
+            fast_monitor=False,
+            poll_sequence=None,
+            frame_asof=features.asof,
+            candles_asof=features.asof,
+            oi_asof=features.asof if features.oi_change_15m is not None else None,
+            orderbook_asof=features.asof if features.liquidity_available else None,
+            score=evaluation.score,
+            grade=evaluation.grade,
+            actionable=evaluation.actionable,
+            admission_passed=evaluation.actionable,
+            veto_reasons=evaluation.veto_reasons,
+            passed_conditions=[k for k, v in evaluation.metadata.items() if isinstance(v, bool) and v],
+            data_quality=evaluation.data_quality,
+            liquidity={
+                "available": features.liquidity_available,
+                "spread_pct": features.spread_pct,
+                "slippage_pct": features.slippage_pct,
+                "depth_1pct_usdt": features.orderbook_depth_usdt_1pct,
+                "depth_2pct_usdt": features.orderbook_depth_usdt_2pct,
+            },
+            oi={"change_15m_pct": features.oi_change_15m, "status": features.derivatives_status},
+            features={**asdict(features), "trapped_longs": evaluation.metadata},
+            lifecycle_state="ADMITTED" if evaluation.actionable else "RETEST_IN_PROGRESS",
+            telegram_eligible=evaluation.actionable,
+            runtime_instance_id=self._runtime_instance_id,
+            root_event_id=root_id,
+            event_revision=1,
+            attempt_id=attempt_id,
+            observed_at=evaluation_time,
+            market_asof=features.asof,
+            evaluation_completed_at=evaluation_time,
+            live_decision="ACTIONABLE" if evaluation.actionable else "BLOCKED",
+            live_veto_reasons=evaluation.veto_reasons,
+        )
+        if not evaluation.actionable or evaluation_id is None:
+            return None
+        if self._repository.has_signal_for_event(
+            features.symbol, root_id, TRAPPED_LONGS_REVERSAL, TRAPPED_LONGS_MODEL_VERSION
+        ):
+            return None
+        reference = float(evaluation.metadata["breakout_reference"])
+        decision = SignalDecision(
+            symbol=features.symbol,
+            event_id=root_id,
+            signal_type=SignalType.CONFIRM,
+            grade=evaluation.grade,
+            score=evaluation.score,
+            market_price=features.price,
+            short_zone_low=reference * 0.99,
+            short_zone_high=reference * 1.01,
+            signal_time=features.asof,
+            reasons=["False breakout", "OI build-up", "Failed retest below breakout level"],
+            risk_flags=[],
+            features_snapshot=asdict(features),
+            score_breakdown={"trapped_longs_v1": float(evaluation.score)},
+            strategy_type=TRAPPED_LONGS_REVERSAL,
+            strategy_subtype=TRAPPED_LONGS_REVERSAL,
+            model_version=TRAPPED_LONGS_MODEL_VERSION,
+            lifecycle_state="TRAPPED_LONGS_ADMITTED",
+            strategy_metadata=evaluation.metadata,
+        )
+        if not live_delivery_enabled(decision, self._config):
+            return None
+        payload = format_signal_message(decision, self._config.timezone)
+        record = self._repository.save_signal(
+            decision,
+            state,
+            telegram_sent=False,
+            delivery_payload=payload,
+            provenance=self._signal_provenance(
+                decision,
+                root_event_id=root_id,
+                decision_evaluation_id=evaluation_id,
+                admission_evaluation_id=evaluation_id,
+            ),
+        )
+        sent = await self._send_new_delivery(entity_type="SIGNAL", entity_id=record.id)
+        self._repository.update_signal_telegram_status(record.id, sent)
+        return decision
+
     async def _evaluate_and_send_climax(
         self,
         symbol: str,
@@ -2192,6 +2302,25 @@ class ShortSignalBot:
                 runtime_started_at=self._runtime_started_at,
                 decision_at=decision.signal_time,
             )
+        if decision.strategy_type == "TRAPPED_LONGS_REVERSAL":
+            if root_event_id is None or decision_evaluation_id is None:
+                raise ValueError("trapped longs signal has incomplete provenance")
+            return SignalProvenanceInput(
+                strategy_family="TRAPPED_LONGS_REVERSAL",
+                strategy_branch="TRAPPED_LONGS_REVERSAL",
+                event_id=decision.event_id,
+                root_event_id=root_event_id,
+                decision_evaluation_id=decision_evaluation_id,
+                admission_evaluation_id=admission_evaluation_id,
+                code_version=self._code_version,
+                config_hash=self._strategy_config_hash,
+                runtime_instance_id=self._runtime_instance_id,
+                runtime_started_at=self._runtime_started_at,
+                decision_at=decision.signal_time,
+                decision_entry_price=decision.market_price,
+                decision_event_high=float(decision.strategy_metadata.get("event_high") or 0.0),
+                provenance_anomaly=_provenance_anomaly(decision),
+            )
         if (
             decision.strategy_type != "CLIMAX_EXHAUSTION"
             or decision.strategy_subtype
@@ -2489,6 +2618,7 @@ class ShortSignalBot:
         ):
             state.state = EventStatus.SHORT_ZONE_ACTIVE
 
+        await self._evaluate_and_send_trapped_longs(state, features, frame_1m)
         evaluation = self._signal_engine.analyze(state, features, zone, now)
         self._repository.record_reject_stat(
             symbol=symbol,
