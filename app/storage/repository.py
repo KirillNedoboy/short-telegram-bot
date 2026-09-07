@@ -487,6 +487,28 @@ class BotRepository:
             logger.exception("market coverage rotation preparation failed")
             return None
 
+    def rotation_scheduled_symbols(self, rotation_id: str) -> set[str] | None:
+        """Return eligible symbols already assigned a terminal result in a rotation."""
+        try:
+            with self._db.session() as session:
+                rows = session.scalars(
+                    select(MarketScanSymbolResultModel.symbol).where(
+                        MarketScanSymbolResultModel.rotation_id == rotation_id,
+                        MarketScanSymbolResultModel.terminal_status.in_(
+                            {
+                                "EXCLUDED",
+                                "SCANNED_OK",
+                                "SCAN_FAILED",
+                                "SCAN_SKIPPED",
+                            }
+                        ),
+                    )
+                ).all()
+                return {str(symbol).upper() for symbol in rows}
+        except Exception:
+            logger.exception("market coverage rotation state read failed")
+            return None
+
     def record_market_scan_cycle_operational(
         self,
         *,

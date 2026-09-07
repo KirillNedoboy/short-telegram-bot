@@ -59,6 +59,40 @@ def test_five_batches_complete_rotation_and_failed_is_counted_once(tmp_path):
         assert rotation.eligible_coverage_pct <= 100.0
 
 
+def test_rotation_scheduled_symbols_are_available_for_next_batch(tmp_path):
+    db = Database(f"sqlite:///{tmp_path / 'rotation-state.sqlite'}")
+    db.create_all()
+    repo = BotRepository(db)
+    repo.set_runtime_metadata(runtime_instance_id="runtime-1", config_fingerprint="c" * 64)
+    eligible = ["AUSDT", "BUSDT", "CUSDT"]
+    result = _record(
+        repo,
+        eligible,
+        ["AUSDT", "BUSDT"],
+        [{"symbol": s, "terminal_status": "SCANNED_OK", "reason_code": "SCANNED_OK"} for s in ["AUSDT", "BUSDT"]],
+    )
+
+    assert repo.rotation_scheduled_symbols(result["rotation_id"]) == {
+        "AUSDT",
+        "BUSDT",
+        "EXCLUDEDUSDT",
+    }
+
+
+def test_rotation_state_read_failure_is_not_treated_as_empty_rotation(tmp_path):
+    db = Database(f"sqlite:///{tmp_path / 'rotation-state-error.sqlite'}")
+    db.create_all()
+    repo = BotRepository(db)
+
+    class BrokenDatabase:
+        def session(self):
+            raise RuntimeError("rotation state unavailable")
+
+    repo._db = BrokenDatabase()
+
+    assert repo.rotation_scheduled_symbols("rotation-1") is None
+
+
 def test_coverage_percent_is_bounded():
     assert coverage_percent(600, 500) == 100.0
     assert coverage_percent(0, 0) is None

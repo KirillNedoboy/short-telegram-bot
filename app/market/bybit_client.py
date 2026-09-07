@@ -65,7 +65,14 @@ class BybitClient:
         timeout: int = 20,
     ) -> None:
         self._scheduler = scheduler
-        self._client = HTTP(testnet=testnet, timeout=timeout)
+        self._client = HTTP(
+            testnet=testnet,
+            timeout=timeout,
+            max_retries=1,
+            # pybit restores its defaults when retry_codes is empty.  Keep a
+            # non-matching sentinel so RequestScheduler owns all retries.
+            retry_codes={-1},
+        )
 
     async def fetch_instruments(self) -> list[dict[str, Any]]:
         """Fetch all linear instruments with cursor pagination."""

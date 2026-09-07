@@ -61,6 +61,34 @@ TERMINAL_STATUSES = {"EXCLUDED", "SCANNED_OK", "SCAN_FAILED", "SCAN_SKIPPED"}
 ROTATION_STATUSES = {"OPEN", "COMPLETED", "INCOMPLETE", "ABORTED_RESTART", "FAILED"}
 
 
+def select_rotation_batch(
+    *,
+    eligible_symbols: Iterable[str],
+    already_scheduled: Iterable[str],
+    preferred_symbols: Iterable[str],
+    batch_size: int,
+) -> list[str]:
+    """Select an uncovered batch while preserving ranked preference order."""
+    eligible = sorted({str(symbol).upper() for symbol in eligible_symbols if symbol})
+    if batch_size <= 0 or not eligible:
+        return []
+    scheduled = {str(symbol).upper() for symbol in already_scheduled if symbol}
+    uncovered = set(eligible) - scheduled
+    preferred = list(
+        dict.fromkeys(
+            str(symbol).upper()
+            for symbol in preferred_symbols
+            if str(symbol).upper() in uncovered
+        )
+    )
+    ordered = preferred + [
+        symbol
+        for symbol in eligible
+        if symbol in uncovered and symbol not in preferred
+    ]
+    return ordered[:batch_size]
+
+
 def coverage_percent(covered: int, denominator: int) -> float | None:
     if denominator <= 0:
         return None

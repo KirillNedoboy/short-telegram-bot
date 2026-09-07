@@ -12,7 +12,7 @@ import uuid
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Self
+from typing import Callable, Self, cast
 
 import pandas as pd
 
@@ -44,6 +44,7 @@ from app.infra.request_scheduler import RequestScheduler
 from app.infra.runtime_metadata import resolve_code_version
 from app.logger import configure_logging
 from app.market.bybit_client import BybitClient
+from app.market.coverage import select_rotation_batch
 from app.market.scanner import MarketScanner
 from app.market_data.provider import CanonicalMarketDataProvider
 from app.market_data.provider import ComparisonClassification
@@ -800,8 +801,8 @@ class ShortSignalBot:
             prepare_rotation = getattr(
                 self._repository, "prepare_market_scan_rotation", None
             )
+            telemetry = getattr(self._scanner, "last_universe_telemetry", None)
             if prepare_rotation is not None:
-                telemetry = getattr(self._scanner, "last_universe_telemetry", None)
                 if telemetry is not None:
                     self._shadow_rotation_id = (
                         prepare_rotation(
@@ -812,7 +813,27 @@ class ShortSignalBot:
                         or "unknown"
                     )
             shortlist = self._scanner.shortlist(snapshots)
-            symbols = [snapshot.symbol for snapshot in shortlist]
+            preferred_symbols = [snapshot.symbol for snapshot in shortlist]
+            symbols = preferred_symbols
+            rotation_symbols = getattr(
+                self._repository, "rotation_scheduled_symbols", None
+            )
+            if (
+                self._shadow_rotation_id != "unknown"
+                and telemetry is not None
+                and callable(rotation_symbols)
+            ):
+                scheduled_reader = cast(
+                    Callable[[str], set[str] | None], rotation_symbols
+                )
+                already_scheduled = scheduled_reader(self._shadow_rotation_id)
+                if already_scheduled is not None:
+                    symbols = select_rotation_batch(
+                        eligible_symbols=telemetry.eligible_symbols,
+                        already_scheduled=already_scheduled,
+                        preferred_symbols=preferred_symbols,
+                        batch_size=self._config.shortlist_size,
+                    )
             seen_symbols = set(symbols)
             for active_symbol in active_states:
                 if active_symbol in seen_symbols:

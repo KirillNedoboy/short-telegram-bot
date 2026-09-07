@@ -26,6 +26,8 @@ def test_bybit_client_passes_timeout(monkeypatch) -> None:
 
     assert captured["timeout"] == 27
     assert captured["testnet"] is False
+    assert captured["max_retries"] == 1
+    assert captured["retry_codes"] == {-1}
 
 
 class _StaticScheduler:
