@@ -38,6 +38,10 @@ STRATEGY_CONFIG_FIELDS = frozenset(
         "low_volume_block_price_acceleration_resumed", "low_volume_block_active_short_squeeze",
         "low_volume_high_liquidity_risk_mode", "low_volume_current_ret5_gate_enabled",
         "climax_max_spread_pct", "climax_max_slippage_pct", "climax_min_depth_1pct_usdt", "climax_min_depth_2pct_usdt",
+        "trapped_longs_reversal_enabled", "trapped_longs_live_delivery_enabled", "trapped_longs_min_oi_change_15m_pct",
+        "trapped_longs_min_closed_candles", "trapped_longs_max_lifetime_minutes", "trapped_longs_new_high_tolerance_pct",
+        "trapped_longs_min_rejection_pct", "trapped_longs_min_signal_score", "trapped_longs_min_public_grade",
+        "trapped_longs_max_spread_pct", "trapped_longs_max_slippage_pct", "trapped_longs_min_depth_1pct_usdt", "trapped_longs_min_depth_2pct_usdt",
     }
 )
 

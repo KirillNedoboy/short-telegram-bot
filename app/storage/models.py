@@ -66,7 +66,7 @@ class SignalProvenanceModel(Base):
     __tablename__ = "signal_provenance"
     __table_args__ = (
         CheckConstraint(
-            "strategy_branch IN ('BASELINE_PULLBACK', 'VOLUME_CLIMAX_UNWIND', 'LOW_VOLUME_EXTENSION_FAILURE')",
+            "strategy_branch IN ('BASELINE_PULLBACK', 'VOLUME_CLIMAX_UNWIND', 'LOW_VOLUME_EXTENSION_FAILURE', 'TRAPPED_LONGS_REVERSAL')",
             name="ck_signal_provenance_strategy_branch",
         ),
         CheckConstraint(
@@ -74,6 +74,9 @@ class SignalProvenanceModel(Base):
             "AND root_event_id IS NULL AND decision_evaluation_id IS NULL AND admission_evaluation_id IS NULL) "
             "OR (strategy_branch IN ('VOLUME_CLIMAX_UNWIND', 'LOW_VOLUME_EXTENSION_FAILURE') "
             "AND strategy_family = 'CLIMAX_EXHAUSTION' AND root_event_id IS NOT NULL "
+            "AND decision_evaluation_id IS NOT NULL) "
+            "OR (strategy_branch = 'TRAPPED_LONGS_REVERSAL' "
+            "AND strategy_family = 'TRAPPED_LONGS_REVERSAL' AND root_event_id IS NOT NULL "
             "AND decision_evaluation_id IS NOT NULL)",
             name="ck_signal_provenance_strategy_shape",
         ),

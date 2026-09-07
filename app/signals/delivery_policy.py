@@ -15,6 +15,8 @@ def live_delivery_enabled(decision: SignalDecision, config: AppConfig) -> bool:
         return False
     if decision.strategy_type == "BASELINE_PULLBACK":
         return config.baseline_live_delivery_enabled
+    if decision.strategy_type == "TRAPPED_LONGS_REVERSAL":
+        return getattr(config, "trapped_longs_live_delivery_enabled", False)
     if decision.strategy_type != "CLIMAX_EXHAUSTION":
         return False
     if decision.strategy_subtype == "VOLUME_CLIMAX_UNWIND":

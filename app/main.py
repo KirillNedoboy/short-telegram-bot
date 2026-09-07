@@ -87,6 +87,13 @@ from app.signals.climax import (
     volume_climax_attempt_id,
 )
 from app.signals.delivery_policy import live_delivery_enabled
+from app.signals.trapped_longs import (
+    TRAPPED_LONGS_MODEL_VERSION,
+    TRAPPED_LONGS_REVERSAL,
+    evaluate_trapped_longs_reversal,
+    trapped_longs_attempt_id,
+    trapped_longs_root_event_id,
+)
 from app.signals.engine import SignalEngine
 from app.signals.formatter import format_signal_message
 from app.storage.db import Database
@@ -1324,6 +1331,14 @@ class ShortSignalBot:
 
     async def update_outcomes(self, now: datetime | None = None) -> int:
         return await self._outcome_tracker.update_due_outcomes(now=now)
+
+    def evaluate_trapped_longs_reversal(
+        self, state: EventState, features: SymbolFeatures, frame_1m: pd.DataFrame
+    ):
+        """Evaluate the independent contour without old-bundle selection."""
+        if not getattr(self._config, "trapped_longs_reversal_enabled", False):
+            return None
+        return evaluate_trapped_longs_reversal(state, features, frame_1m, self._config)
 
     async def _evaluate_and_send_climax(
         self,

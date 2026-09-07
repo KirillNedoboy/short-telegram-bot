@@ -111,6 +111,20 @@ class AppConfig(BaseModel):
     volume_climax_live_delivery_enabled: bool = True
     low_volume_live_delivery_enabled: bool = True
 
+    trapped_longs_reversal_enabled: bool = False
+    trapped_longs_live_delivery_enabled: bool = False
+    trapped_longs_min_oi_change_15m_pct: float = 1.0
+    trapped_longs_min_closed_candles: int = 2
+    trapped_longs_max_lifetime_minutes: int = 15
+    trapped_longs_new_high_tolerance_pct: float = 0.30
+    trapped_longs_min_rejection_pct: float = 1.0
+    trapped_longs_min_signal_score: int = 70
+    trapped_longs_min_public_grade: str = "B"
+    trapped_longs_max_spread_pct: float = 0.80
+    trapped_longs_max_slippage_pct: float = 1.00
+    trapped_longs_min_depth_1pct_usdt: float = 5000
+    trapped_longs_min_depth_2pct_usdt: float = 10000
+
     climax_short_enabled: bool = False
     climax_fast_monitor_enabled: bool = False
     climax_fast_poll_sec: int = 20
@@ -301,6 +315,10 @@ class AppConfig(BaseModel):
             raise ValueError("climax_min_public_grade must be A or B")
         if self.climax_grade_a_score < self.climax_min_signal_score:
             raise ValueError("climax_grade_a_score must be >= climax_min_signal_score")
+        if self.trapped_longs_min_public_grade not in {"A", "B"}:
+            raise ValueError("trapped_longs_min_public_grade must be A or B")
+        if self.trapped_longs_min_signal_score < 0 or self.trapped_longs_min_closed_candles < 1:
+            raise ValueError("trapped longs thresholds must be non-negative and candle count positive")
         if self.climax_fast_poll_sec < 1 or self.climax_max_active_symbols < 1:
             raise ValueError("climax fast monitor bounds must be positive")
         if (
