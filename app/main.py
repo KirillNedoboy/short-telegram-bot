@@ -668,6 +668,36 @@ class ShortSignalBot:
         ):
             raise RuntimeError("minimum market-data readiness returned no data")
 
+    async def _audit_delivery_funnel(self) -> None:
+        """Alert on durable delivery-chain gaps without writing telemetry rows."""
+        audit = getattr(self._repository, "audit_delivery_funnel", None)
+        if audit is None:
+            return
+        try:
+            findings = audit(now=datetime.now(timezone.utc))
+        except Exception as exc:  # noqa: BLE001 - watchdog must not stop scanning
+            self._logger.warning(
+                "Delivery funnel watchdog failed | error=%s", type(exc).__name__
+            )
+            return
+        if not findings:
+            return
+        kinds: dict[str, int] = {}
+        for finding in findings:
+            kind = str(finding.get("kind", "unknown"))
+            kinds[kind] = kinds.get(kind, 0) + 1
+        self._logger.error("Delivery funnel invariant violations | kinds=%s", kinds)
+        alert_key = "delivery_funnel_dead" if "dead_delivery" in kinds else "delivery_funnel_violation"
+        if not self._error_throttler.should_send(alert_key):
+            return
+        try:
+            await self._notifier.send_alert(
+                "Delivery funnel invariant violation: "
+                + ", ".join(f"{key}={value}" for key, value in sorted(kinds.items()))
+            )
+        except Exception:
+            self._logger.exception("Delivery funnel operator alert failed")
+
     async def _deliver_outbox_item(self, delivery: dict[str, object]) -> bool:
         delivery_id = int(delivery["id"])
         try:
@@ -758,6 +788,7 @@ class ShortSignalBot:
             if not await self._ensure_storage_healthy("cycle"):
                 return []
             await self._drain_delivery_outbox(limit=5)
+            await self._audit_delivery_funnel()
             await self._shadow_outcome_scheduler.run_cycle(now=cycle_started_at)
             active_selection_at = datetime.now(timezone.utc)
             active_states = self._state_store.load_active(now=active_selection_at)

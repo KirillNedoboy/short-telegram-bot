@@ -30,6 +30,7 @@ from app.market.coverage import (
     coverage_percent,
     universe_fingerprint,
 )
+from app.observability.delivery_funnel import audit_delivery_funnel
 from app.observability.strategy_observations import (
     ObservationWriteResult,
     ObservationWriteStatus,
@@ -1681,6 +1682,47 @@ class BotRepository:
                 )
             )
             return {"dead": int(dead), "retry": int(retry)}
+
+    def audit_delivery_funnel(self, now: datetime | None = None) -> list[dict[str, Any]]:
+        """Read-only audit of signal/provenance/outbox delivery invariants."""
+        observed_at = now or datetime.now(timezone.utc)
+        with self._db.session() as session:
+            signals = [
+                {"id": int(signal_id), "telegram_sent": bool(telegram_sent)}
+                for signal_id, telegram_sent in session.execute(
+                    select(SignalModel.id, SignalModel.telegram_sent)
+                )
+            ]
+            provenances = [
+                {"signal_id": int(signal_id)}
+                for (signal_id,) in session.execute(
+                    select(SignalProvenanceModel.signal_id)
+                )
+            ]
+            outbox = [
+                {
+                    "id": int(outbox_id),
+                    "entity_type": entity_type,
+                    "entity_id": int(entity_id),
+                    "status": status,
+                    "lease_until": lease_until,
+                }
+                for outbox_id, entity_type, entity_id, status, lease_until in session.execute(
+                    select(
+                        TelegramDeliveryOutboxModel.id,
+                        TelegramDeliveryOutboxModel.entity_type,
+                        TelegramDeliveryOutboxModel.entity_id,
+                        TelegramDeliveryOutboxModel.status,
+                        TelegramDeliveryOutboxModel.lease_until,
+                    )
+                )
+            ]
+        return audit_delivery_funnel(
+            signals=signals,
+            provenances=provenances,
+            outbox=outbox,
+            now=observed_at,
+        )
 
     def delivery_id_for_entity(self, entity_type: str, entity_id: int) -> int:
         with self._db.session() as session:
