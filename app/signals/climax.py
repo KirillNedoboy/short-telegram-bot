@@ -386,7 +386,6 @@ def _low_volume(
     vetoes: list[str] = []
     quality: list[str] = []
     closed_count = int(data.get("closed_candles_after_high") or 0)
-    post_high_high = data.get("post_high_high")
     post_high_retest_high = data.get("post_high_retest_high")
     high = float(data["event_high"])
     tol = float(config.low_volume_max_new_high_tolerance_pct)

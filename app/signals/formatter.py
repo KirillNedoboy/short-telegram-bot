@@ -56,12 +56,18 @@ def _watch_non_signal_reasons(decision: SignalDecision) -> list[str]:
     reasons.extend(decision.blockers)
     reasons.extend(decision.squeeze_risk_reasons)
     for flag in decision.risk_flags:
-        if flag == "Volume z-score is moderately below actionable threshold.": reasons.append("volume_weak")
-        elif flag in {"Recent high was just broken.", "Continuation body is still too large."}: reasons.append("breakout_risk")
-        elif flag == "Retest failure is not fully confirmed.": reasons.append("retest_not_failed")
-        elif flag == "Orderbook depth within 1% is too thin.": reasons.append("thin_orderbook")
-        elif flag == "Orderbook depth within 2% is too thin.": reasons.append("low_liquidity")
-        else: reasons.append(flag)
+        if flag == "Volume z-score is moderately below actionable threshold.":
+            reasons.append("volume_weak")
+        elif flag in {"Recent high was just broken.", "Continuation body is still too large."}:
+            reasons.append("breakout_risk")
+        elif flag == "Retest failure is not fully confirmed.":
+            reasons.append("retest_not_failed")
+        elif flag == "Orderbook depth within 1% is too thin.":
+            reasons.append("thin_orderbook")
+        elif flag == "Orderbook depth within 2% is too thin.":
+            reasons.append("low_liquidity")
+        else:
+            reasons.append(flag)
     return list(dict.fromkeys(reason for reason in reasons if reason))
 
 
@@ -71,6 +77,8 @@ def format_signal_message(decision: SignalDecision, timezone_name: str) -> str:
     local_time = decision.signal_time.astimezone(tz).strftime("%Y-%m-%d %H:%M %Z")
     if decision.signal_type == SignalType.WATCH:
         return _format_watch_message(decision, local_time)
+    if decision.strategy_subtype == "TRAPPED_LONGS_REVERSAL":
+        return _format_trapped_longs_message(decision, local_time, type_ru=_SIGNAL_TYPE_RU[decision.signal_type])
     if decision.strategy_subtype in {"VOLUME_CLIMAX_UNWIND", "LOW_VOLUME_EXTENSION_FAILURE"}:
         return _format_climax_message(decision)
     type_ru = _SIGNAL_TYPE_RU[decision.signal_type]
@@ -84,6 +92,27 @@ def format_signal_message(decision: SignalDecision, timezone_name: str) -> str:
         f"Класс: {decision.grade}\nОценка: {decision.score}{optional_risk}\n\nСетап:\n"
         "Памп обнаружен -> Откат зафиксирован -> Шорт-зона активна\n\nПочему:\n"
         f"{why_lines}\n\nРиск:\n{risk_lines}\nТолько ручной вход.\nАвтоисполнения нет."
+    )
+
+
+def _format_trapped_longs_message(decision: SignalDecision, local_time: str, *, type_ru: str) -> str:
+    m = decision.strategy_metadata
+    def level(key: str) -> str:
+        value = m.get(key)
+        return "н/д" if value is None else f"{float(value):.6f}"
+    def metric(key: str) -> str:
+        value = m.get(key)
+        return "н/д" if value is None else f"{float(value):.2f}%"
+    why_lines = "\n".join(f"- {_translate_reason_line(line)}" for line in decision.reasons)
+    return (
+        "🔴 ШОРТ-СИГНАЛ | Bybit\n"
+        f"Символ: {decision.symbol}\nСтратегия: TRAPPED_LONGS_REVERSAL\nТип: {type_ru}\nВремя: {local_time}\n\n"
+        f"Цена решения: {level('decision_price')}\nBreakout level: {level('breakout_reference')}\n"
+        f"Failed-retest high: {level('failed_retest_high')}\nEvent high: {level('event_high')}\n"
+        f"Distance from breakout: {metric('distance_from_breakout_pct')}\n"
+        f"Distance from retest high: {metric('distance_from_retest_high_pct')}\n"
+        f"Класс: {decision.grade}\nОценка: {decision.score}\n\nПочему:\n{why_lines}\n\n"
+        "Только ручной вход.\nАвтоисполнения нет."
     )
 
 

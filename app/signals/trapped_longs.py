@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import pandas as pd
@@ -43,7 +43,14 @@ def _cfg(config: Any, name: str, default: Any) -> Any:
 
 
 def evaluate_trapped_longs_reversal(
-    state: EventState, features: SymbolFeatures, frame: pd.DataFrame, config: Any
+    state: EventState,
+    features: SymbolFeatures,
+    frame: pd.DataFrame,
+    config: Any,
+    *,
+    attempt_created_at: datetime | None = None,
+    confirmation_expires_at: datetime | None = None,
+    decision_time: datetime | None = None,
 ) -> TrappedLongsEvaluation:
     """Evaluate only the trapped-long reversal contract; never mutates ``state``."""
     metadata: dict[str, Any] = {"strategy_type": "TRAPPED_LONGS", "strategy_subtype": TRAPPED_LONGS_REVERSAL, "model_version": TRAPPED_LONGS_MODEL_VERSION}
@@ -104,12 +111,125 @@ def evaluate_trapped_longs_reversal(
         elif (features.spread_pct > _cfg(config, "trapped_longs_max_spread_pct", .80) or features.slippage_pct > _cfg(config, "trapped_longs_max_slippage_pct", 1.0) or features.orderbook_depth_usdt_1pct < _cfg(config, "trapped_longs_min_depth_1pct_usdt", 5000) or features.orderbook_depth_usdt_2pct < _cfg(config, "trapped_longs_min_depth_2pct_usdt", 10000)):
             vetoes.append("liquidity_block")
 
+    if (
+        attempt_created_at is not None
+        and confirmation_expires_at is not None
+        and decision_time is not None
+    ):
+        vetoes.extend(
+            trapped_longs_expiry_reasons(
+                attempt_created_at=attempt_created_at,
+                confirmation_expires_at=confirmation_expires_at,
+                decision_time=decision_time,
+            )
+        )
+
     flags = [bool(state.event_id), breakout, closed_count >= 2, close < reference, bool(features.latest_failed_retest), oi is not None and oi >= 1.0, not any(r == "new_high_before_delivery" for r in vetoes)]
     score = min(100, 10 + 15 * sum(flags))
     grade = "A" if score >= 85 else "B" if score >= 70 else "C"
-    metadata.update({"close_below_breakout_reference": close < reference, "failed_retest_confirmed": bool(features.latest_failed_retest), "no_new_high": "new_high_before_delivery" not in vetoes, "rejection_pct": rejection})
+    metadata.update({"close_below_breakout_reference": close < reference, "failed_retest_confirmed": bool(features.latest_failed_retest), "no_new_high": "new_high_before_delivery" not in vetoes, "rejection_pct": rejection, "failed_retest_high": float(features.last_high or event_high), "decision_price": float(features.price), "entry_reference": reference, "failed_retest_quality": "PREDICATE_SHAPE_ONLY", "oi_sequence_classification": "WEAK_DIRECTIONAL_OI_INFERENCE" if oi is not None else "OI_UNKNOWN"})
+    metadata.update(compute_trapped_longs_shadow_metrics(decision_price=float(features.price), breakout_reference=reference, failed_retest_high=float(features.last_high or event_high), event_high=event_high, atr=float(features.atr_14 or 0), breakout_failure_time=None, failed_retest_time=None, decision_time=decision_time, event_high_time=state.event_high_time))
     admitted = not vetoes and score >= int(_cfg(config, "trapped_longs_min_signal_score", 70)) and grade in {"A", "B"}
     return TrappedLongsEvaluation(TRAPPED_LONGS_REVERSAL if admitted else None, score, grade, metadata, vetoes, [])
+
+
+def trapped_longs_expiry_reasons(
+    *,
+    attempt_created_at: datetime,
+    confirmation_expires_at: datetime,
+    decision_time: datetime,
+) -> list[str]:
+    """Return stable Strategy-4 expiry blockers without changing the window."""
+    reasons: list[str] = []
+    if confirmation_expires_at <= attempt_created_at:
+        reasons.append("BORN_EXPIRED_ATTEMPT")
+    if decision_time >= confirmation_expires_at:
+        reasons.append("CONFIRMATION_WINDOW_EXPIRED")
+    return reasons
+
+
+def compute_trapped_longs_shadow_metrics(
+    *,
+    decision_price: float,
+    breakout_reference: float,
+    failed_retest_high: float | None,
+    event_high: float,
+    atr: float | None,
+    breakout_failure_time: datetime | None,
+    failed_retest_time: datetime | None,
+    decision_time: datetime | None,
+    event_high_time: datetime | None,
+) -> dict[str, Any]:
+    """Return bounded, non-admission metrics for Strategy-4 shadow review."""
+    def pct(level: float | None) -> float | None:
+        return None if level in (None, 0) else (level - decision_price) / level * 100
+
+    def atr_distance(level: float | None) -> float | None:
+        return None if level in (None, 0) or not atr else (level - decision_price) / atr
+
+    def minutes_between(start: datetime | None, end: datetime | None) -> float | None:
+        if start is None or end is None:
+            return None
+        if start.tzinfo is None:
+            start = start.replace(tzinfo=timezone.utc)
+        if end.tzinfo is None:
+            end = end.replace(tzinfo=timezone.utc)
+        return (end - start).total_seconds() / 60
+
+    breakout_pct = pct(breakout_reference)
+    breakout_atr = atr_distance(breakout_reference)
+    retest_pct = pct(failed_retest_high)
+    retest_atr = atr_distance(failed_retest_high)
+    event_pct = pct(event_high)
+    event_atr = atr_distance(event_high)
+    max_distance = max(abs(x) for x in (breakout_pct, retest_pct, event_pct) if x is not None)
+    max_atr = max(abs(x) for x in (breakout_atr, retest_atr, event_atr) if x is not None)
+    classification = "ENTRY_FRESH" if max_distance <= 0.5 and max_atr <= 0.5 else (
+        "ENTRY_HEAVILY_CHASED" if max_distance >= 3.0 or max_atr >= 2.0 else "ENTRY_EXTENDED"
+    )
+    quality = max(0.0, min(100.0, 100.0 - max_distance * 12.0 - max_atr * 8.0))
+    return {
+        "distance_from_breakout_pct": breakout_pct,
+        "distance_from_breakout_atr": breakout_atr,
+        "distance_from_retest_high_pct": retest_pct,
+        "distance_from_retest_high_atr": retest_atr,
+        "distance_from_event_high_pct": event_pct,
+        "distance_from_event_high_atr": event_atr,
+        "event_high_to_decision_minutes": minutes_between(event_high_time, decision_time),
+        "breakout_failure_to_failed_retest_minutes": minutes_between(breakout_failure_time, failed_retest_time),
+        "failed_retest_to_decision_minutes": minutes_between(failed_retest_time, decision_time),
+        "favorable_move_completed_pct": event_pct,
+        "entry_classification": classification,
+        "shadow_quality_score": round(quality, 2),
+    }
+
+
+def classify_trapped_longs_oi_sequence(
+    *,
+    price_before: float | None,
+    price_breakout: float | None,
+    price_failure: float | None,
+    oi_before: float | None,
+    oi_breakout: float | None,
+    oi_failure: float | None,
+    oi_decision: float | None,
+    retained_increase_pct: float = 1.0,
+) -> str:
+    """Classify historical OI evidence; this never participates in admission."""
+    values = (price_before, price_breakout, price_failure, oi_before, oi_breakout, oi_failure, oi_decision)
+    if any(value is None or value <= 0 for value in values):
+        return "OI_UNKNOWN"
+    assert all(value is not None for value in values)
+    p_before, p_breakout, p_failure, o_before, o_breakout, o_failure, o_decision = (float(value) for value in values)
+    breakout_price_up = p_breakout > p_before
+    breakout_oi_up = o_breakout > o_before
+    retained_floor = o_before * (1 + retained_increase_pct / 100)
+    if breakout_price_up and breakout_oi_up and p_failure < p_breakout:
+        if o_failure >= retained_floor and o_decision >= retained_floor:
+            return "STRONG_TRAPPED_LONG_EVIDENCE"
+        if o_failure < retained_floor or o_decision < retained_floor:
+            return "OI_UNWOUND_AFTER_FAILURE"
+    return "WEAK_DIRECTIONAL_OI_INFERENCE"
 
 
 def advance_trapped_longs_lifecycle(*, root_created_at: datetime, breakout_at: datetime, observed_at: datetime, event_revision: int, breakout_confirmed: bool, oi_confirmed: bool, closed_candles: int, close_below_reference: bool, failed_retest: bool, no_new_high: bool, liquidity_ok: bool, rejection_ok: bool, max_lifetime_minutes: int = 15) -> TrappedLongsLifecycle:

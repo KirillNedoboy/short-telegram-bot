@@ -12,7 +12,7 @@ import uuid
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Callable, Self, cast
+from typing import Any, Callable, Self, cast
 
 import pandas as pd
 
@@ -1335,12 +1335,12 @@ class ShortSignalBot:
         return await self._outcome_tracker.update_due_outcomes(now=now)
 
     def evaluate_trapped_longs_reversal(
-        self, state: EventState, features: SymbolFeatures, frame_1m: pd.DataFrame
+        self, state: EventState, features: SymbolFeatures, frame_1m: pd.DataFrame, **kwargs: Any
     ):
         """Evaluate the independent contour without old-bundle selection."""
         if not getattr(self._config, "trapped_longs_reversal_enabled", False):
             return None
-        return evaluate_trapped_longs_reversal(state, features, frame_1m, self._config)
+        return evaluate_trapped_longs_reversal(state, features, frame_1m, self._config, **kwargs)
 
     async def _evaluate_and_send_trapped_longs(
         self, state: EventState, features: SymbolFeatures, frame_1m: pd.DataFrame
@@ -1355,12 +1355,37 @@ class ShortSignalBot:
             snapshot["breakout_reference"] = float(state.event_high) * 0.995
             state.event_features_snapshot = snapshot
             self._state_store.save(state)
-        evaluation = self.evaluate_trapped_longs_reversal(state, features, frame_1m)
         root_id = trapped_longs_root_event_id(features.symbol, state.event_id)
         attempt_id = trapped_longs_attempt_id(features.symbol, state.event_id)
         evaluation_time = datetime.now(timezone.utc)
         root_created_at = state.event_start_time or state.event_high_time or features.asof
         breakout_at = state.event_high_time or root_created_at
+        proposed_expiry = breakout_at + timedelta(
+            minutes=int(getattr(self._config, "trapped_longs_max_lifetime_minutes", 15))
+        )
+        stored_attempt = self._repository.get_shadow_entry_attempt(attempt_id=attempt_id)
+        attempt_created_at = (
+            stored_attempt["attempt_created_at"]
+            if stored_attempt and stored_attempt["attempt_created_at"] is not None
+            else evaluation_time
+        )
+        confirmation_expires_at = (
+            stored_attempt["confirmation_expires_at"]
+            if stored_attempt and stored_attempt["confirmation_expires_at"] is not None
+            else proposed_expiry
+        )
+        evaluation = self.evaluate_trapped_longs_reversal(
+            state,
+            features,
+            frame_1m,
+            attempt_created_at=attempt_created_at,
+            confirmation_expires_at=confirmation_expires_at,
+            decision_time=evaluation_time,
+        )
+        expiry_blocked = bool(
+            set(evaluation.veto_reasons)
+            & {"CONFIRMATION_WINDOW_EXPIRED", "BORN_EXPIRED_ATTEMPT"}
+        )
         lifecycle = advance_trapped_longs_lifecycle(
             root_created_at=root_created_at,
             breakout_at=breakout_at,
@@ -1382,9 +1407,13 @@ class ShortSignalBot:
             observed_at=evaluation_time,
             local_retest_high=features.last_high,
             breakdown_level=float(evaluation.metadata.get("breakout_reference") or 0.0),
-            attempt_state="ACTIONABLE" if lifecycle.state == "ADMITTED" else lifecycle.state,
+            attempt_state=(
+                "EXPIRED"
+                if expiry_blocked
+                else "ACTIONABLE" if lifecycle.state == "ADMITTED" else lifecycle.state
+            ),
             attempt_trigger="trapped_longs_reversal",
-            confirmation_expires_at=breakout_at + timedelta(minutes=int(getattr(self._config, "trapped_longs_max_lifetime_minutes", 15))),
+            confirmation_expires_at=proposed_expiry,
             event_revision=lifecycle.event_revision,
             runtime_instance_id=self._runtime_instance_id,
             model_version=TRAPPED_LONGS_MODEL_VERSION,
@@ -1437,7 +1466,9 @@ class ShortSignalBot:
             },
             oi={"change_15m_pct": features.oi_change_15m, "status": features.derivatives_status},
             features={**asdict(features), "trapped_longs": evaluation.metadata},
-            lifecycle_state="ADMITTED" if evaluation.actionable else "RETEST_IN_PROGRESS",
+            lifecycle_state=(
+                "EXPIRED" if expiry_blocked else "ADMITTED" if evaluation.actionable else "RETEST_IN_PROGRESS"
+            ),
             telegram_eligible=evaluation.actionable,
             runtime_instance_id=self._runtime_instance_id,
             root_event_id=root_id,

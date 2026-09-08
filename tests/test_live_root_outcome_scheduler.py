@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
 import asyncio
-import pandas as pd
 
 from app.observability.outcome_scheduler import ShadowOutcomeScheduler
 from app.storage.db import Database

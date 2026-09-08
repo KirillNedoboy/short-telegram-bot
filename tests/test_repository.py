@@ -38,3 +38,28 @@ def test_repository_round_trip(tmp_path, make_event_state, make_signal_decision,
     assert record.id > 0
     assert repository.list_signals_missing_outcomes() == []
     assert outcome.price_after_4h == 99.0
+
+
+def test_repository_reads_immutable_shadow_attempt_window(tmp_path) -> None:
+    database = Database(f"sqlite:///{tmp_path / 'attempt.db'}")
+    database.create_all()
+    repository = BotRepository(database)
+    created = datetime(2026, 1, 1, 12, tzinfo=timezone.utc)
+    expires = created + timedelta(minutes=15)
+    assert repository.upsert_shadow_entry_attempt(
+        attempt_id="trapped_longs:attempt:ABCUSDT:root:r1",
+        root_event_id="trapped_longs:ABCUSDT:root",
+        observed_at=created,
+        local_retest_high=105.0,
+        breakdown_level=100.0,
+        attempt_state="RETEST_IN_PROGRESS",
+        confirmation_expires_at=expires,
+        event_revision=1,
+        max_attempts_per_root_event=1,
+    )
+    row = repository.get_shadow_entry_attempt(
+        attempt_id="trapped_longs:attempt:ABCUSDT:root:r1"
+    )
+    assert row is not None
+    assert row["attempt_created_at"] == created
+    assert row["confirmation_expires_at"] == expires

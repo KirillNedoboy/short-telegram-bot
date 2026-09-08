@@ -2,7 +2,6 @@ from datetime import datetime, timedelta, timezone
 
 import asyncio
 
-from app.market.candles import klines_to_frame
 from app.outcomes.tracker import OutcomeTracker
 
 

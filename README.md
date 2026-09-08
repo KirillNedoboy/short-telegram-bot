@@ -1,98 +1,96 @@
-# Telegram Short Signal Bot v1.1 Lite
+# Short Telegram Bot
 
-Lightweight live Telegram signal bot for Bybit USDT perpetual contracts.
+A Bybit USDT-perpetual market-monitoring bot that detects short-side reversal and exhaustion setups, persists decisions in SQLite, and delivers human-readable Telegram alerts. **It is a signal and research system, not an order-execution engine.**
 
-## What It Does
+## Status
 
-- scans Bybit `linear` USDT perpetual tickers
-- builds a configurable shortlist
-- detects pump events
-- can persist an **EARLY_PUMP_WATCH** / pre-pullback watch for strong blogger-like moves that are not mature enough to trade
-- waits for the first meaningful pullback before any actionable short setup exists
-- activates a post-pump short zone
-- scores aggressive or confirm signals
-- sends Telegram alerts for actionable signals
-- stores signals, WATCH candidates, event state, and basic outcomes in SQLite
+- Runtime: asynchronous single-process poller
+- Market data: Bybit REST, closed-candle aware feature pipeline
+- Storage: SQLite with WAL and durable Telegram outbox
+- Execution: no order placement; `AUTOEXECUTION=OFF`
+- Live V1 strategies: `BASELINE_PULLBACK`, `VOLUME_CLIMAX_UNWIND`, `LOW_VOLUME_EXTENSION_FAILURE`
+- `TRAPPED_LONGS_REVERSAL`: evaluation/shadow contour; live Telegram delivery remains disabled
+- WATCH candidates: non-actionable by default
 
-## Live Delivery Contract
-
-Live V1 strategies are `BASELINE_PULLBACK`, `VOLUME_CLIMAX_UNWIND`, and `LOW_VOLUME_EXTENSION_FAILURE`. Their separate delivery gates default to `true`.
-
-`VOLUME_CLIMAX_LIFECYCLE_SHADOW_V2` is research-only telemetry; its lifecycle states do not replace live V1 admission. `EARLY_PUMP_WATCH` follows `send_watch_to_telegram`, which defaults to `false`. The bot has no order execution.
-
-Telegram delivery is persisted through `telegram_delivery_outbox` with at-least-once semantics. A network acknowledgement can be ambiguous, so duplicate delivery remains possible.
-
-## Project Layout
+## Architecture
 
 ```text
-short-telegram-bot-lite/
-├── app/
-├── scripts/
-├── tests/
-├── .env.example
-├── config.yaml
-├── requirements.txt
-└── README.md
+Bybit REST
+   │
+   ├─ tickers/instruments ─> universe filter + shortlist
+   ├─ 1m klines ────────────> candle normalization + features
+   ├─ OI/funding (optional) ─┘
+   └─ orderbook (optional) ──> liquidity features
+                                      │
+                              event/state machines
+                                      │
+                           strategy evaluation branches
+                                      │
+                 ┌────────────────────┴────────────────────┐
+                 │                                         │
+           live admission                         shadow observations
+                 │                                         │
+          signals + outbox                         outcomes/research
+                 │
+          Telegram notifier
 ```
 
-## Quick Start
+The composition root is `app/main.py:ShortSignalBot`. Detailed component boundaries are in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-1. Create a virtual environment with Python 3.11+.
-2. Install dependencies:
+## Strategies
+
+| Strategy | Role | Default delivery |
+|---|---|---|
+| `BASELINE_PULLBACK` | Mature post-pump pullback inside the configured short zone | Live |
+| `VOLUME_CLIMAX_UNWIND` | High-volume exhaustion with unwind/rejection evidence | Live |
+| `LOW_VOLUME_EXTENSION_FAILURE` | Weak extension, low volume efficiency and failed high | Live |
+| `TRAPPED_LONGS_REVERSAL` | Experimental trapped-long reversal hypothesis | Shadow only |
+
+The authoritative strategy contracts and invariants are in [`docs/STRATEGIES.md`](docs/STRATEGIES.md). Do not infer profitability from score or grade alone.
+
+## Quick start
 
 ```bash
-pip install -r requirements.txt
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+cp .env.example .env
+cp config.example.yaml config.yaml
+.venv/bin/python scripts/run_once.py
 ```
 
-3. Copy `.env.example` to `.env` and fill in Telegram values.
-4. Review `config.yaml`.
-5. Run a one-shot pass:
+Run the service loop only after reviewing configuration and delivery policy:
 
 ```bash
-python scripts/run_once.py
+.venv/bin/python scripts/run_live.py
 ```
 
-6. Run the live loop:
-
-```bash
-python scripts/run_live.py
-```
-
-7. Recompute outcomes for saved signals:
-
-```bash
-python scripts/evaluate_outcomes.py
-```
-
-## Configuration
-
-- `config.example.yaml` is the complete safe reference for behavior, thresholds, scheduling, storage, rate limiting, watch candidates, and squeeze-guard settings.
-- `.env.example` is the complete reference for Telegram credentials and chat IDs.
-- Keep the real `.env` outside Git. Never commit tokens, private keys, chat exports, databases, logs, `.venv`, or generated files.
-
-## Documentation map
-
-- `docs/current_bot_architecture.md` — modules and data flow
-- `docs/current_bot_signal_pipeline.md` — event → pullback → short-zone → signal lifecycle
-- `docs/current_bot_data_model.md` — SQLite entities and persistence
-- `docs/current_bot_score_tier_map.md` — scoring and tier semantics
-- `docs/deployment.md` — server/systemd deployment and update procedure
-- `docs/llm-handoff.md` — compact onboarding guide for another LLM
-- `SECURITY.md` — secret-handling rules
-- `CONTRIBUTING.md` — development and quality gates
-
-## Tests
-
-Run the full suite with:
+## Quality gates
 
 ```bash
 .venv/bin/pytest -q
+.venv/bin/python -m compileall -q app scripts tests
+.venv/bin/ruff check app scripts tests
 ```
 
-The current server snapshot passes the full test suite before publication.
+## Documentation
 
-## Notes
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — components, runtime flow and boundaries
+- [`docs/STRATEGIES.md`](docs/STRATEGIES.md) — strategy contracts and state machines
+- [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) — persistence, outbox and outcome semantics
+- [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — deployment, health checks and incident runbook
+- [`docs/SHADOW_VALIDATION.md`](docs/SHADOW_VALIDATION.md) — forward cohort and promotion rules
+- [`docs/current_bot_signal_pipeline.md`](docs/current_bot_signal_pipeline.md) — detailed signal pipeline
+- [`docs/current_bot_score_tier_map.md`](docs/current_bot_score_tier_map.md) — score and grade map
+- [`SECURITY.md`](SECURITY.md) — secret handling and operational security
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — development workflow
 
-- The bot never opens orders automatically.
-- Optional OI and funding inputs are supported but disabled by default.
-- The default database is SQLite, but the repository layer is SQLAlchemy 2.0 friendly for a later PostgreSQL move.
+## Configuration and data hygiene
+
+- `config.example.yaml` is the safe tracked template.
+- Real `config.yaml`, `.env`, databases, WAL/SHM files, logs and generated reports stay outside Git.
+- Never commit Telegram tokens, API keys, private keys, passwords, chat exports or connection strings.
+- The repository deliberately contains no production SQLite database.
+
+## License
+
+Add the project license before public distribution. This repository is intended for private operational development unless explicitly sanitized for publication.

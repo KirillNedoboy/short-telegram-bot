@@ -2835,6 +2835,20 @@ class BotRepository:
             ).first()
             return model.attempt_id if model else None
 
+    def get_shadow_entry_attempt(self, *, attempt_id: str) -> dict[str, datetime | str | None] | None:
+        """Read immutable Strategy-4 attempt timing for admission checks."""
+        with self._db.session() as session:
+            model = session.get(ClimaxEntryAttemptModel, attempt_id)
+            if model is None:
+                return None
+            return {
+                "attempt_id": model.attempt_id,
+                "attempt_created_at": _ensure_utc(model.attempt_created_at),
+                "confirmation_expires_at": _ensure_utc(model.confirmation_expires_at),
+                "attempt_state": model.attempt_state,
+                "attempt_closed_at": model.attempt_closed_at,
+            }
+
     def expire_shadow_attempt_if_due(
         self,
         *,

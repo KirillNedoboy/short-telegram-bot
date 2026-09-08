@@ -39,7 +39,6 @@ class FeatureBuilder:
         latest_1m = frame_1m.iloc[-1]
         market_asof = normalize_utc(market_asof or (_frame_timestamp(latest_1m["timestamp"]) + timedelta(minutes=1)))
         closed_1m = closed_1m_rows(frame_1m, market_asof)
-        frame_5m = resample_ohlcv(frame_1m, "5min")
         complete_5m = complete_5m_ohlcv(frame_1m, market_asof)
         frame_15m = resample_ohlcv(frame_1m, "15min")
         latest_15m = frame_15m.iloc[-1]
