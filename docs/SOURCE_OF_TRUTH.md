@@ -40,13 +40,15 @@ As of the latest operator verification, both isolated lanes are active simultane
 - Lane A `bf47d2b1` — primary production lane;
 - Lane B `dfcdb9df` — secondary experimental lane.
 
-Lane A uses:
+Lane A currently uses:
 
-- `shortlist_size: 100`;
-- `min_24h_volume: 5,000,000`;
+- `shortlist_size: 132`;
+- `min_24h_volume: 2,000,000`;
 - `AUTOEXECUTION=OFF`;
 - manual entry only;
 - `EARLY_DROP_WARNING` as a separate non-actionable stream.
+
+The 132-symbol / `$2M` configuration was activated after a bounded rollout. Initial post-change windows completed in approximately 15.9–19.7 seconds with all 132 symbols terminally processed and no `DEADLINE_EXCEEDED`; one fast-monitor frame-prefetch timestamp error occurred during warmup and subsequent polls recovered.
 
 Lane B uses its own release/config/database contour, a 50-symbol / `$5M` shortlist mode, and the split climax evaluators. Its `TRAPPED_LONGS_REVERSAL` evaluator is enabled, while `trapped_longs_live_delivery_enabled` remains false in the effective B configuration.
 

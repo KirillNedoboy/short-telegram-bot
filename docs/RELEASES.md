@@ -5,7 +5,7 @@
 | Release | Date | Lane | Status | Universe/config | Delivery | Result |
 |---|---:|---|---|---|---|---|
 | `ce77d744` | 2026-09-08 | Public baseline | Verified in this clone | Baseline defaults; compare `app/config.py` and `config.example.yaml` | Baseline live branches; shadow branches marked separately | Public source of truth for checked-in code |
-| `bf47d2b1...` | 2026-09-14 | Lane A | Production-reported | 100 symbols; `$5M` minimum 24h volume | Manual short signals plus additive separate warning stream | Selected stable production release |
+| `bf47d2b1...` | 2026-09-14 | Lane A | Active primary lane | 132 symbols; `$2M` minimum 24h volume after bounded rollout | Manual short signals plus additive separate warning stream | Current active configuration; initial windows 15.9–19.7s |
 | `dfcdb9df...` | 2026-09-17 | Lane B | Active secondary lane | 50 symbols; `$5M`; stricter limiter/resource policy | Split climax evaluators; trapped-longs delivery disabled | Active alongside Lane A; observed deadline pressure remains |
 | candidate | 2026-09-20 | A/B candidate | Rejected/rolled back | 111 symbols; `$3M` minimum volume | Not activated as production | Cycle duration and incomplete-data capacity gate failed |
 
@@ -13,7 +13,7 @@ Full release identifiers are recorded in `SOURCE_OF_TRUTH.md`. The two productio
 
 ## Current production claims
 
-The current operator-verified state has Lane A and Lane B active simultaneously as isolated lanes. Ordinary short signals remain manual-entry notifications; no order-placement path is part of the contract. `EARLY_DROP_WARNING` is a separate non-actionable observation and does not enter ordinary short admission.
+The current operator-verified state has Lane A and Lane B active simultaneously as isolated lanes. Lane A is currently 132 symbols / `$2M`; Lane B remains 50 symbols / `$5M`. Ordinary short signals remain manual-entry notifications; no order-placement path is part of the contract. `EARLY_DROP_WARNING` is a separate non-actionable observation and does not enter ordinary short admission.
 
 ## Why the 111-symbol candidate was not promoted
 

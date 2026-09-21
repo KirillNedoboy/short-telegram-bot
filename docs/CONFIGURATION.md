@@ -20,4 +20,4 @@ Use the release's checked-in defaults first, then an operator-owned configuratio
 
 ## Production overlay
 
-The operator-reported active Lane A overlay is documented in `SOURCE_OF_TRUTH.md` and `RELEASES.md`: 100 symbols, `$5M` minimum 24h volume, manual signals, and autoexecution disabled. Do not substitute the rejected 111-symbol / `$3M` candidate.
+The current Lane A overlay is documented in `SOURCE_OF_TRUTH.md` and `RELEASES.md`: 132 symbols, `$2M` minimum 24h volume, manual signals, and autoexecution disabled. Do not substitute the rejected 111-symbol / `$3M` candidate. Lane B remains isolated at 50 symbols / `$5M`.
