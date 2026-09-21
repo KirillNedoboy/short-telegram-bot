@@ -153,6 +153,8 @@ class AppConfig(BaseModel):
     volume_climax_max_entry_distance_below_high_pct: float = 20.0
     volume_climax_lifecycle_shadow_enabled: bool = True
     volume_climax_confirmation_window_minutes: int = 3
+    climax_fresh_recheck_attempts: int = 2
+    climax_fresh_recheck_retry_delay_sec: float = 3.0
     volume_climax_min_closed_candles_after_high: int = 2
     volume_climax_max_lifetime_minutes: int = 15
     low_volume_extension_enabled: bool = False

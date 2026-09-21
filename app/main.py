@@ -2096,9 +2096,44 @@ class ShortSignalBot:
                 )
                 return None
             if getattr(self._scanner, "supports_symbol_frames", hasattr(self._scanner, "fetch_symbol_frames")):
-                decision_market = (
-                    await self._market_data_provider.capture_decision_snapshot(symbol)
+                decision_market = None
+                recheck_attempts = max(
+                    1, int(getattr(self._config, "climax_fresh_recheck_attempts", 2))
                 )
+                recheck_delay_sec = max(
+                    0.0,
+                    float(getattr(self._config, "climax_fresh_recheck_retry_delay_sec", 3.0)),
+                )
+                for recheck_attempt in range(1, recheck_attempts + 1):
+                    decision_market = (
+                        await self._market_data_provider.capture_decision_snapshot(symbol)
+                    )
+                    has_frame = (
+                        decision_market is not None
+                        and not decision_market.frame_1m.frame.empty
+                    )
+                    has_liquidity = bool(
+                        decision_market is not None
+                        and decision_market.liquidity
+                    )
+                    if has_frame and has_liquidity:
+                        self._logger.info(
+                            "Climax fresh recheck status=LIQUIDITY_SNAPSHOT_READY symbol=%s attempt=%s/%s",
+                            symbol,
+                            recheck_attempt,
+                            recheck_attempts,
+                        )
+                        break
+                    status = "LIQUIDITY_DATA_MISSING" if has_frame else "RECHECK_TIMEOUT"
+                    self._logger.info(
+                        "Climax fresh recheck status=%s symbol=%s attempt=%s/%s",
+                        status,
+                        symbol,
+                        recheck_attempt,
+                        recheck_attempts,
+                    )
+                    if recheck_attempt < recheck_attempts and recheck_delay_sec:
+                        await asyncio.sleep(recheck_delay_sec)
                 if decision_market is not None and not decision_market.frame_1m.frame.empty:
                     fresh_frame = decision_market.frame_1m.frame.copy(deep=True)
                     fresh_derivatives = dict(decision_market.derivatives)
@@ -2120,6 +2155,24 @@ class ShortSignalBot:
                         strict_closed_candles=True,
                     )
                     fresh_eval = fresh_bundle.selected
+                    if not fresh_features.liquidity_available:
+                        self._logger.info(
+                            "Climax fresh recheck status=LIQUIDITY_DATA_MISSING symbol=%s",
+                            symbol,
+                        )
+                    elif any(
+                        reason in {"liquidity_not_confirmed", "climax_liquidity_block"}
+                        for reason in fresh_eval.veto_reasons
+                    ):
+                        self._logger.info(
+                            "Climax fresh recheck status=LIQUIDITY_THRESHOLD_FAILED symbol=%s",
+                            symbol,
+                        )
+                    else:
+                        self._logger.info(
+                            "Climax fresh recheck status=LIQUIDITY_CONFIRMED symbol=%s",
+                            symbol,
+                        )
                     fresh_evaluation_id = self._repository.record_climax_evaluation(
                         evaluation_time=datetime.now(timezone.utc),
                         symbol=symbol,
