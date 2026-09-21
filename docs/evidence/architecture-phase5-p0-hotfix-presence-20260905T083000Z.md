@@ -30,7 +30,7 @@ All are PRESENT in `d7d54fa…`: filesystem byte/percent/inode snapshots; dynami
 
 ## Production runtime
 
-- Current release: `/opt/short-telegram-bot-lite-admin/releases/d7d54fa8af070241711d5072cffbf8208f482b5d`.
+- Current release: `<PRIVATE_ADMIN_ROOT>/releases/d7d54fa8af070241711d5072cffbf8208f482b5d`.
 - Service: `active`, `READY`, MainPID `108366`, `NRestarts=0`; current resolves to combined release.
 - Disk guard is active before DB heartbeat and reports: free bytes `3,568,746,496`, free percent `5.64`, free inodes `3,142,784`, DB bytes `3,599,515,648`, WAL bytes `27,068,432`, dynamic reserve `4,764,729,344`, state `LOW_SPACE`.
 - Read-only SQLite `PRAGMA quick_check`: `ok`.

@@ -26,11 +26,11 @@ Observed large consumers were conservatively classified:
 
 The deleted artifact was verified immediately before deletion:
 
-- Path: `/opt/short-telegram-bot-lite-admin/work/legacy-rollback-rehearsal-v2-20260905T054100Z/bot.sqlite`
+- Path: `<PRIVATE_ADMIN_ROOT>/work/legacy-rollback-rehearsal-v2-20260905T054100Z/bot.sqlite`
 - Classification: `TEMPORARY_REHEARSAL`
 - Size: `3,566,133,248` bytes
 - SHA-256: `729ce0004989770f58ac4207c098577dc9bd84b499d473d979661153004fb239`
-- `realpath -e` resolved exactly beneath `/opt/short-telegram-bot-lite-admin/work`.
+- `realpath -e` resolved exactly beneath `<PRIVATE_ADMIN_ROOT>/work`.
 - `lsof` reported no open handles.
 - `result.json` was non-empty and preserved.
 - Only that file was deleted; no DB, WAL, SHM, release, backup, archive, configuration, or environment file was removed.

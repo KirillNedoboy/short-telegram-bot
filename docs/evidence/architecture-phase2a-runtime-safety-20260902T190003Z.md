@@ -34,8 +34,8 @@ Timestamp: `2026-09-02T19:00:03Z`.
 - `app/infra/request_scheduler.py`: a semaphore and rate limiter constrain API
   calls, not symbol-state writes.
 - Production unit was read-only over SSH and matches the example: `Restart=always`,
-  `RestartSec=10`, `WorkingDirectory=/opt/short-telegram-bot-lite`,
-  `ExecStart=/opt/short-telegram-bot-lite/.venv/bin/python scripts/run_live.py`,
+  `RestartSec=10`, `WorkingDirectory=<APP_ROOT>`,
+  `ExecStart=<APP_ROOT>/.venv/bin/python scripts/run_live.py`,
   `User=root`, `KillSignal=15`, and `TimeoutStopUSec=1min 30s`. No unit change
   or restart was performed.
 

@@ -1,7 +1,7 @@
 # Anima Research Review Cycle 5: `VOLUME_CLIMAX_UNWIND`
 
 - **Run time:** 2026-07-22T16:45Z
-- **Repository:** `/opt/short-telegram-bot-lite`
+- **Repository:** `<APP_ROOT>`
 - **Reviewed baseline:** `a4160e4` plus the current uncommitted telemetry/lifecycle patch
 - **Review mode:** read-only; code, tests, and local SQLite/journal evidence only
 - **Live admission:** unchanged
@@ -21,7 +21,7 @@ No thresholds, live admission, Telegram delivery, auto-execution, or production 
 - `.venv/bin/python -m compileall -q app tests research`: exit `0`.
 - `git diff --check`: exit `0`.
 - systemd: `ActiveState=active`, `SubState=running`, `MainPID=128948`, `NRestarts=0`, `ExecMainStatus=0`.
-- SQLite `/opt/short-telegram-bot-lite/data/bot.sqlite`: `integrity_check=ok`, `journal_mode=wal`.
+- SQLite `<APP_ROOT>/data/bot.sqlite`: `integrity_check=ok`, `journal_mode=wal`.
 - Current DB totals: `climax_evaluations=8369`, `climax_root_events=214`, `climax_entry_attempts=278`, `climax_entry_attempt_events=1112`, `signals=93`.
 - Latest heartbeat: runtime ID `b9f1506b...`, model `climax-v1`, `fast_monitor_last_error=NULL`.
 - Journal since the service start: no `Traceback`, `Exception`, rate-limit, or poll-error markers; recurring literal `timeout` matches were not treated as errors because they occur in unrelated timeout/status text. There were 127 logged full-cycle completions and 913 `poll_start` / 1054 `poll_complete` matches in the collected interval.

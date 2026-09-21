@@ -173,8 +173,8 @@ Operational clues exist in:
 
 These indicate:
 
-- remote app root likely `/opt/short-telegram-bot-lite`
-- remote DB likely `/opt/krntrade/data/bot.sqlite`
+- remote app root likely `<APP_ROOT>`
+- remote DB likely `<APP_ROOT>/data/bot.sqlite`
 - observed unit names include `short-telegram-bot-lite.service` and `short-signal-bot-live.service`
 
 This is evidence of external service management, but the actual service definitions are not present in-repo.

@@ -38,7 +38,7 @@ The filesystem was `/dev/vda2`, 63,310,585,856 bytes total. Journal usage was 59
 
 | Consumer | Classification | Action |
 |---|---|---|
-| Production DB/WAL/SHM and `/opt/short-telegram-bot-lite` | `ACTIVE_PRODUCTION_REQUIRED` | Retained |
+| Production DB/WAL/SHM and `<APP_ROOT>` | `ACTIVE_PRODUCTION_REQUIRED` | Retained |
 | Active `d7d54fa…` release | `CURRENT_RELEASE_REQUIRED` | Retained |
 | `261646f7…-legacy`, `2a88e7…`, `eff29af…` | `IMMUTABLE_ROLLBACK_REQUIRED` | Retained |
 | `pre_architecture_rollout_20260903T200737Z.sqlite` | `CURRENT_ROLLBACK_BACKUP_REQUIRED` | Retained |
@@ -53,14 +53,14 @@ Every target passed the same immediate preflight: exact `realpath`, real top-lev
 
 | Exact deleted path | Classification | Observed apparent bytes | Filesystem bytes recovered |
 |---|---|---:|---:|
-| `/opt/short-telegram-bot-lite-admin/work/phase5-shadow-validation-1bb1097` | `TEMPORARY_REHEARSAL_SAFE_TO_REMOVE` | 237,912,194 | 267,177,984 |
-| `/opt/short-telegram-bot-lite-admin/work/phase5-shadow-validation-3f8d28a` | `TEMPORARY_REHEARSAL_SAFE_TO_REMOVE` | 471,872,350 | 531,034,112 |
-| `/opt/short-telegram-bot-lite-admin/releases/ab4fd795e6d91885aee07e9538fea45d28c396d2` | `OLD_RELEASE_SAFE_TO_REMOVE` | 455,952,025 | 487,600,128 |
-| `/opt/short-telegram-bot-lite-admin/releases/dd761486bc6ca566e3ce524321dd56db8bde23b7` | `OLD_RELEASE_SAFE_TO_REMOVE` | 456,058,991 | 487,641,088 |
-| `/opt/short-telegram-bot-lite-admin/releases/d03d8fbdbfa838323d02eebd96e23b28b34c53c3` | `OLD_RELEASE_SAFE_TO_REMOVE` | 456,071,499 | 487,702,528 |
-| `/opt/short-telegram-bot-lite-admin/releases/6f74fafce5ee7f0fc40389786e102d7f15bd8182` | `OLD_RELEASE_SAFE_TO_REMOVE` | 4,484,399 | 5,738,496 |
-| `/opt/short-telegram-bot-lite-admin/releases/c8b8409cbea0a279c7bd80f7ef86fda45fb22ba` | `OLD_RELEASE_SAFE_TO_REMOVE` | 260,420,595 | 290,242,560 |
-| `/opt/short-telegram-bot-lite-admin/releases/56dbc03e4cca40b36b8c1c34a27d752ebe74ab31` | `OLD_RELEASE_SAFE_TO_REMOVE` | 260,579,500 | 290,410,496 |
+| `<PRIVATE_ADMIN_ROOT>/work/phase5-shadow-validation-1bb1097` | `TEMPORARY_REHEARSAL_SAFE_TO_REMOVE` | 237,912,194 | 267,177,984 |
+| `<PRIVATE_ADMIN_ROOT>/work/phase5-shadow-validation-3f8d28a` | `TEMPORARY_REHEARSAL_SAFE_TO_REMOVE` | 471,872,350 | 531,034,112 |
+| `<PRIVATE_ADMIN_ROOT>/releases/ab4fd795e6d91885aee07e9538fea45d28c396d2` | `OLD_RELEASE_SAFE_TO_REMOVE` | 455,952,025 | 487,600,128 |
+| `<PRIVATE_ADMIN_ROOT>/releases/dd761486bc6ca566e3ce524321dd56db8bde23b7` | `OLD_RELEASE_SAFE_TO_REMOVE` | 456,058,991 | 487,641,088 |
+| `<PRIVATE_ADMIN_ROOT>/releases/d03d8fbdbfa838323d02eebd96e23b28b34c53c3` | `OLD_RELEASE_SAFE_TO_REMOVE` | 456,071,499 | 487,702,528 |
+| `<PRIVATE_ADMIN_ROOT>/releases/6f74fafce5ee7f0fc40389786e102d7f15bd8182` | `OLD_RELEASE_SAFE_TO_REMOVE` | 4,484,399 | 5,738,496 |
+| `<PRIVATE_ADMIN_ROOT>/releases/c8b8409cbea0a279c7bd80f7ef86fda45fb22ba` | `OLD_RELEASE_SAFE_TO_REMOVE` | 260,420,595 | 290,242,560 |
+| `<PRIVATE_ADMIN_ROOT>/releases/56dbc03e4cca40b36b8c1c34a27d752ebe74ab31` | `OLD_RELEASE_SAFE_TO_REMOVE` | 260,579,500 | 290,410,496 |
 
 Total filesystem recovery measured by `df -B1`: `2,847,547,392` bytes.
 

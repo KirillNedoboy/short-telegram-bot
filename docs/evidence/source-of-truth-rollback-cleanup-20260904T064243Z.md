@@ -36,7 +36,7 @@ This is a fail-closed rehearsal result, not a production mutation.
 ## Immutable legacy release
 
 - Source commit: `261646f7e7653957438dee54b38a23104f35c4ea`.
-- Release: `/opt/short-telegram-bot-lite-admin/releases/261646f7e7653957438dee54b38a23104f35c4ea-legacy/`.
+- Release: `<PRIVATE_ADMIN_ROOT>/releases/261646f7e7653957438dee54b38a23104f35c4ea-legacy/`.
 - Deterministic source archive SHA-256:
   `e8b11e88404717bee81bbc4a2c30ad4c01ade9acb3b7711e200c8cb8893304a9`.
 - Release manifest was generated with source/file hashes, Python,
@@ -58,7 +58,7 @@ This is a fail-closed rehearsal result, not a production mutation.
 - Protected counts were unchanged, but `climax_entry_attempts` digest changed
   from `90569b108f2518b55d91dfbadc0efa0f52f144b5c75c6cd964db3e06be02f77c` to
   `e0ca6bd8f43b83853e45f8af56c96d71192c12df21823fa5070d220634287bae`.
-- Therefore `legacy-current` remains `/opt/short-telegram-bot-lite` and was
+- Therefore `legacy-current` remains `<APP_ROOT>` and was
   not repointed.
 - Marker `LEGACY_CHECKOUT_NOT_ROLLBACK_SOURCE` was not asserted because the
   required rehearsal gate did not pass.

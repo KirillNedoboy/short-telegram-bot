@@ -11,13 +11,13 @@ Run completed: 2026-08-28T13:14:21Z.
   ` M config.yaml`, `?? artifacts/`, `?? backups/`, `?? clean_epoch_P0_CLEAN_SCHEDULER_V1.json`, `?? config.yaml.pre_shadow_v2_rollback_`, `?? docs/evidence/`, `?? docs/research/`, `?? forensic_pre_clean_20260817T205952Z/`.
 - `config.yaml` SHA-256: `24bce4ca7dce59354cb8b22b581528daa9889cc66003a17c7500f727d3d515e6`.
 - Service: `active/running`, PID `271637`, `NRestarts=0`, `ExecMainStatus=0`.
-- DB: `/opt/short-telegram-bot-lite/data/bot.sqlite`; before size `2,162,802,688` bytes; WAL `14,745,512` bytes; filesystem free `10,286,538,752` bytes.
+- DB: `<APP_ROOT>/data/bot.sqlite`; before size `2,162,802,688` bytes; WAL `14,745,512` bytes; filesystem free `10,286,538,752` bytes.
 - Initial production DB checks: `query_only=1`, `journal_mode=wal`, `user_version=0`, `integrity_check=ok`.
 
 ## Admin tooling
 
 - Tooling SHA: `ab4fd795e6d91885aee07e9538fea45d28c396d2`.
-- Release: `/opt/short-telegram-bot-lite-admin/releases/ab4fd795e6d91885aee07e9538fea45d28c396d2`.
+- Release: `<PRIVATE_ADMIN_ROOT>/releases/ab4fd795e6d91885aee07e9538fea45d28c396d2`.
 - `current` remained an admin-only symlink to that release.
 - Isolated `.venv-research` import/path checks and the Phase 0/archive/full test gates were already PASS from the Phase 1 safe deploy.
 
@@ -50,7 +50,7 @@ Production dry-run selection was not executed because the only available cutoff 
 - Archive files: `0`.
 - Archive bytes: `0`.
 - Complete manifests: `0`.
-- `/opt/short-telegram-bot-lite-admin/research_archive/` remained empty.
+- `<PRIVATE_ADMIN_ROOT>/research_archive/` remained empty.
 - DuckDB parity and post-delete archive lookup: `N/A` because no authoritative production archive was published and no rows were deleted.
 
 ## Forensic linkage
@@ -107,7 +107,7 @@ Not applicable: no new backup was created and no existing backup was changed.
 - Free before: `10,286,538,752` bytes.
 - Free after: `10,284,167,168` bytes.
 - Archive growth from this run: `0` bytes.
-- Existing `/opt/short-telegram-bot-lite/backups` was left untouched.
+- Existing `<APP_ROOT>/backups` was left untouched.
 
 ## Growth projection
 

@@ -1,7 +1,7 @@
 # Anima Research Review Cycle 8: unified liquidity policy
 
 - **Run time:** 2026-07-22T17:06:31Z
-- **Repository:** `/opt/short-telegram-bot-lite`
+- **Repository:** `<APP_ROOT>`
 - **Reviewed baseline:** `a4160e4` plus the current uncommitted unified-liquidity/lifecycle patch
 - **Review mode:** read-only; local source, tests, systemd, journal, and SQLite evidence only
 - **Live admission:** unchanged by this review

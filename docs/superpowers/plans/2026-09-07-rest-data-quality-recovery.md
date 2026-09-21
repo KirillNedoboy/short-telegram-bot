@@ -24,7 +24,7 @@ Must not change:
 
 Allowed:
 
-- clean hotfix workspace only: `/opt/short-telegram-bot-lite-hotfix`;
+- clean hotfix workspace only: `<APP_ROOT>-hotfix`;
 - request retry/rate-limit scheduling;
 - focused tests and external evidence report.
 

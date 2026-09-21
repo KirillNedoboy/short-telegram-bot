@@ -81,7 +81,7 @@
   },
   "production": {
     "deployed": true,
-    "release": "/opt/short-telegram-bot-lite-admin/releases/a51b006602a16978e6e25287b8bbb540a2aa603a",
+    "release": "<PRIVATE_ADMIN_ROOT>/releases/a51b006602a16978e6e25287b8bbb540a2aa603a",
     "ready": "PASS",
     "pid": 123943,
     "nrestarts": 0,

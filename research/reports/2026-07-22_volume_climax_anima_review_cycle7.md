@@ -1,7 +1,7 @@
 # Anima Research Review Cycle 7: `VOLUME_CLIMAX_UNWIND`
 
 - **Run time:** 2026-07-22T16:55Z
-- **Repository:** `/opt/short-telegram-bot-lite`
+- **Repository:** `<APP_ROOT>`
 - **Reviewed baseline:** `a4160e4` plus the current uncommitted live-liquidity fail-closed patch
 - **Review mode:** read-only; code, tests, systemd, and SQLite inspection
 - **Live admission:** unchanged
@@ -19,7 +19,7 @@ The working tree is uncommitted in `app/main.py`, `app/signals/climax.py`, `app/
 - `.venv/bin/python -m compileall -q app tests research`: exit `0`.
 - `git diff --check`: exit `0`.
 - systemd: `ActiveState=active`, `SubState=running`, `MainPID=128948`, `NRestarts=0`, `ExecMainStatus=0`.
-- SQLite `/opt/short-telegram-bot-lite/data/bot.sqlite`: `integrity_check=ok`, `journal_mode=wal`.
+- SQLite `<APP_ROOT>/data/bot.sqlite`: `integrity_check=ok`, `journal_mode=wal`.
 - Current totals: `climax_evaluations=8397`, `climax_root_events=214`, `climax_entry_attempts=278`, `climax_entry_attempt_events=1114`, `signals=93`.
 - Runtime DB: `volume_climax:%` attempts `0`; `LIVE_REJECTED_SHADOW_FALLBACK_READY` evaluations `0`; decision deltas: `UNCHANGED_REJECTED=7867`, `LIVE_REJECTED_SHADOW_ACTIONABLE=38`, `UNCHANGED_ACTIONABLE=1`, `NULL=491`.
 

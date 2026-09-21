@@ -83,8 +83,8 @@ combined_early_short_risk_penalty: 6
 market_data_ws_shadow_enabled: false
 canonical_market_data_provider_mode: REST_ONLY
 research_telemetry_storage_mode: SQLITE_ONLY
-research_spool_root: /opt/short-telegram-bot-lite-admin/shared/research_spool
+research_spool_root: <PRIVATE_ADMIN_ROOT>/shared/research_spool
 research_spool_max_bytes: 1073741824
 research_spool_record_max_bytes: 65536
 research_spool_shadow_headroom_bytes: 1073741824
-research_storage_health_path: /opt/short-telegram-bot-lite-admin/shared/runtime/research-storage-health.json
+research_storage_health_path: <PRIVATE_ADMIN_ROOT>/shared/runtime/research-storage-health.json

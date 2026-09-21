@@ -29,7 +29,7 @@ Look for recent `DB heartbeat OK`, completed scan cycles, provider error rates, 
 Use read-only access for inspection:
 
 ```bash
-sqlite3 'file:/opt/short-telegram-bot-lite/data/bot.sqlite?mode=ro' \
+sqlite3 'file:<APP_ROOT>/data/bot.sqlite?mode=ro' \
   'PRAGMA query_only=ON; PRAGMA journal_mode; PRAGMA integrity_check;'
 ```
 

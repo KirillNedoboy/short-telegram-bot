@@ -207,7 +207,7 @@ Before changing code, preserve these invariants unless the operator explicitly a
 For code changes:
 
 ```bash
-cd /opt/short-telegram-bot-lite
+cd <APP_ROOT>
 .venv/bin/python -m pytest -q
 python3 -m compileall -q app tests research
 git diff --check
@@ -227,7 +227,7 @@ A green test suite proves only code behavior. It does not prove trading performa
 The canonical checkout is:
 
 ```text
-/opt/short-telegram-bot-lite
+<APP_ROOT>
 ```
 
 The systemd service is intentionally controlled separately from Git publication. Always inspect the live unit with `systemctl cat` and `systemctl show` before restart. A controlled restart must include a verified backup outside the repository, a fresh non-secret `runtime_instance_id`, DB integrity/WAL checks, and a fresh journal window.

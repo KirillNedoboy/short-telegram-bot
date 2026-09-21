@@ -169,7 +169,7 @@ No production DB benchmark was performed.
 
 ## Limitations
 
-- The active production path `/opt/short-telegram-bot-lite` and systemd service were not reachable from this Windows workstation; all DB measurements used a safe local snapshot copy.
+- The active production path `<APP_ROOT>` and systemd service were not reachable from this Windows workstation; all DB measurements used a safe local snapshot copy.
 - The default interpreter is 32-bit Python 3.11 and cannot install the available PyArrow Windows wheel. Archive verification used installed 64-bit Python 3.12 with `requirements-research.txt`; live runtime requirements remain unchanged.
 - No `dbstat` per-table byte attribution was available; per-table sizes are N/A.
 - Dataset epoch is currently not a runtime field and remains `null` in manifests.

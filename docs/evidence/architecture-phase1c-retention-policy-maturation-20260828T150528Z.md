@@ -28,8 +28,8 @@ failure. This is not treated as an admin write or a trading/runtime change.
   `scripts/archive_research.py`, and `requirements-research.txt`.
 - Bundle scan found no `.git`, `.env`, credentials, private keys, databases,
   caches, or untracked `evidence/` artifacts.
-- Initial smoke release: `/opt/short-telegram-bot-lite-admin/releases/dd761486bc6ca566e3ce524321dd56db8bde23b7`.
-- Final verified release: `/opt/short-telegram-bot-lite-admin/releases/d03d8fbdbfa838323d02eebd96e23b28b34c53c3` (non-current after the stability gate failure).
+- Initial smoke release: `<PRIVATE_ADMIN_ROOT>/releases/dd761486bc6ca566e3ce524321dd56db8bde23b7`.
+- Final verified release: `<PRIVATE_ADMIN_ROOT>/releases/d03d8fbdbfa838323d02eebd96e23b28b34c53c3` (non-current after the stability gate failure).
 - Previous release `ab4fd795e6d91885aee07e9538fea45d28c396d2` was not modified.
 - Isolated release venv: `.venv-research`; `include-system-site-packages=false`.
   PyArrow/DuckDB were installed only there. Import paths resolved inside the
@@ -89,7 +89,7 @@ Command mode: `--retention-dry-run`, policy artifact `phase1c-v1`, literal
 observation boundary `2026-08-28T15:00:49Z`, sample limit `30`.
 
 Raw machine-readable evidence remains at:
-`/opt/short-telegram-bot-lite-admin/shared/evidence/dd761486bc6ca566e3ce524321dd56db8bde23b7/retention-dry-run-20260828T150049Z.json`.
+`<PRIVATE_ADMIN_ROOT>/shared/evidence/dd761486bc6ca566e3ce524321dd56db8bde23b7/retention-dry-run-20260828T150049Z.json`.
 
 | Aggregate | Count |
 |---|---:|

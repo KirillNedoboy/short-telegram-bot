@@ -9,8 +9,8 @@
 - RELEASE_SHA: `2a88e7faa6bb32415636482b10e4652c1b529334`
 - Source branch: `architecture/phase4-baseline-source-faithful-replay`
 - Source bundle SHA-256: `08b48b926f577c56e4009e4ab5101617af872a31dca8622e31eea36a7477dd78`
-- Active release: `/opt/short-telegram-bot-lite-admin/releases/2a88e7faa6bb32415636482b10e4652c1b529334`
-- Legacy rollback target: `/opt/short-telegram-bot-lite`
+- Active release: `<PRIVATE_ADMIN_ROOT>/releases/2a88e7faa6bb32415636482b10e4652c1b529334`
+- Legacy rollback target: `<APP_ROOT>`
 
 ## Preflight
 
@@ -28,7 +28,7 @@
 
 ## Backup
 
-- Path: `/opt/short-telegram-bot-lite-admin/backups/pre_architecture_rollout_20260903T200737Z.sqlite`
+- Path: `<PRIVATE_ADMIN_ROOT>/backups/pre_architecture_rollout_20260903T200737Z.sqlite`
 - Size: `3,477,221,376` bytes.
 - SHA-256: `a971e56fda1b59ce1ab580c2dcf5aa42eb4b8f94caeeac388cd4b87c138bbfbf`.
 - Created with SQLite Online Backup API while the service was active.
@@ -57,9 +57,9 @@ Fresh-backup primary keys were fully preserved after stop and before switch:
 
 ## Atomic deployment
 
-- OLD release before switch: `/opt/short-telegram-bot-lite` was the running legacy checkout; the administrative `current` link was preserved as an existing release reference.
+- OLD release before switch: `<APP_ROOT>` was the running legacy checkout; the administrative `current` link was preserved as an existing release reference.
 - NEW release: `current -> releases/2a88e7faa6bb32415636482b10e4652c1b529334`.
-- systemd now executes through `/opt/short-telegram-bot-lite-admin/current/.venv/bin/python` and the release `scripts/run_live.py`.
+- systemd now executes through `<PRIVATE_ADMIN_ROOT>/current/.venv/bin/python` and the release `scripts/run_live.py`.
 - `WorkingDirectory`, root user, restart policy, environment and production config/DB paths were preserved.
 - `daemon-reload` completed successfully.
 
@@ -108,7 +108,7 @@ Fresh-backup primary keys were fully preserved after stop and before switch:
 
 - Required: NO.
 - Fresh verified backup retained for rollback.
-- Atomic rollback target retained at `/opt/short-telegram-bot-lite-admin/legacy-current`.
+- Atomic rollback target retained at `<PRIVATE_ADMIN_ROOT>/legacy-current`.
 
 ## Final classification
 

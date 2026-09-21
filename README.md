@@ -1,5 +1,26 @@
 # Short Telegram Bot
 
+> Documentation status: versioned public baseline with explicitly separated production and historical release overlays.
+
+## Source of truth
+
+Start with [`docs/SOURCE_OF_TRUTH.md`](docs/SOURCE_OF_TRUTH.md). The public checkout is baseline commit `ce77d744`; the operator-reported production release is Lane A `bf47d2b1` from 2026-09-14, and Lane B `dfcdb9df` from 2026-09-17 is historical/experimental. The latter two release artifacts are not Git objects in this shallow public clone.
+
+## Documentation map
+
+- [Mathematical specification](docs/MATHEMATICS.md)
+- [Strategies and admission](docs/STRATEGIES.md)
+- [Signal pipeline](docs/SIGNAL_PIPELINE.md)
+- [Market-data contract](docs/MARKET_DATA.md)
+- [Signal and delivery contract](docs/DELIVERY.md)
+- [Data model](docs/DATA_MODEL.md)
+- [Release matrix](docs/RELEASES.md)
+- [Configuration](docs/CONFIGURATION.md)
+- [Testing and reproducibility](docs/TESTING.md)
+- [Sanitized examples](docs/examples/README.md)
+
+The repository is a signal and research system. It does not place live orders, enable copy-trading, or provide autoexecution. Ordinary short notifications are manual-entry only. `EARLY_DROP_WARNING` and `WATCH` are non-actionable and never enter ordinary short admission.
+
 A Bybit USDT-perpetual market-monitoring bot that detects short-side reversal and exhaustion setups, persists decisions in SQLite, and delivers human-readable Telegram alerts. **It is a signal and research system, not an order-execution engine.**
 
 ## Status

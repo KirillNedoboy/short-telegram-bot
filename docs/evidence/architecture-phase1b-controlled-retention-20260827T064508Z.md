@@ -5,8 +5,8 @@
 ## Production state before
 
 - Rollout start UTC: `2026-08-27T06:45:08Z`.
-- Required production host: Linux host for `/opt/short-telegram-bot-lite`.
-- Required production DB: `/opt/short-telegram-bot-lite/data/bot.sqlite`.
+- Required production host: Linux host for `<APP_ROOT>`.
+- Required production DB: `<APP_ROOT>/data/bot.sqlite`.
 - Production SSH preflight: **FAILED** with `Permission denied (publickey,password)` using non-interactive BatchMode access.
 - `hostname`, `pwd`, production `git rev-parse`, production `git status`, systemd state, disk usage, DB integrity, journal mode, and WAL state: **NOT OBSERVABLE** from this workstation.
 - No production shell command beyond the safe SSH connectivity probe was executed.

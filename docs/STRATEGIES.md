@@ -1,92 +1,42 @@
-# Strategy Contracts
+# Strategies and admission
 
-## Delivery matrix
+This document distinguishes baseline-verified code from production-reported overlays. Source paths refer to the public baseline unless stated otherwise.
 
-| Strategy | Evaluation | Live Telegram | Autoexecution |
-|---|---:|---:|---:|
-| `BASELINE_PULLBACK` | ON | ON by explicit flag | OFF |
-| `VOLUME_CLIMAX_UNWIND` | ON | ON by explicit flag | OFF |
-| `LOW_VOLUME_EXTENSION_FAILURE` | ON | ON by explicit flag | OFF |
-| `TRAPPED_LONGS_REVERSAL` | ON | OFF | OFF |
+## Common contract
 
-The delivery policy is allow-listed. Shadow or WATCH states cannot become live signals through formatting or persistence.
+Every actionable branch requires trusted market data, a valid lifecycle/event context, strategy hard gates, liquidity/squeeze acceptance, score/grade policy, persistence, and delivery policy. A feature or score alone never creates a signal.
 
 ## BASELINE_PULLBACK
 
-The baseline branch requires a detected pump, a mature pullback, and current price inside the configured short zone. It then applies core filters: VWAP distance, rejection/candle structure, volume, pullback bounds, liquidity and squeeze/breakout protections. Score and grade are calculated only after hard filters.
+Pump detection selects the first eligible 15m/1h/4h horizon and requires a stretch condition. The event tracks base/high/range/expiry. A mature pullback must reach the configured interval, preserve the required VWAP/range-floor behavior, and enter the short zone. Public baseline gates include event state, age, zone membership, VWAP distance, rejection geometry, volume z-score, pullback bounds, score, grade, liquidity, squeeze, and breakout-risk vetoes. See `app/signals/engine.py`, `app/signals/filters.py`, `app/events/`, and `MATHEMATICS.md`.
 
-Typical state path:
+## VOLUME_CLIMAX_UNWIND (V1 live branch)
 
-```text
-IDLE/EXPIRED → PUMP_DETECTED → PULLBACK_OBSERVED → SHORT_ZONE_ACTIVE → SIGNAL_SENT
-```
+Requires usable OI, volume climax evidence, positive short-horizon returns, rejection, bounded entry distance, complete liquidity data, and the configured climax score/grade. This is distinct from the V2 lifecycle telemetry described below.
 
-A confirmed new high resets stale pullback/zone state without silently reusing the prior entry.
+## VOLUME_CLIMAX_LIFECYCLE_SHADOW_V2
 
-## VOLUME_CLIMAX_UNWIND
-
-This branch looks for a high-volume extension/climax followed by evidence of exhaustion and unwind. It requires valid derivatives context where configured, volume/pump evidence, rejection, acceptable entry distance and liquidity. Missing or contradictory evidence vetoes the branch.
-
-It is evaluated independently from the low-volume branch. One branch cannot relax another branch's gates.
+`CLIMAX_WATCHING` and `FALLBACK_READY` are confirmation/research states. A new high creates a revision and restarts confirmation. Missing closed candles, active acceleration, squeeze, OI continuation, weak rejection, bad liquidity, or excessive entry distance hold the candidate. These states do not automatically change V1 live delivery.
 
 ## LOW_VOLUME_EXTENSION_FAILURE
 
-This branch targets a weak extension whose volume efficiency is low and whose high fails. It requires comparable volume windows, closed candles after the high, no resumed high, close/retest structure, rejection, liquidity and configured distance limits. It remains a live unchanged strategy.
+Requires a confirmed event, sufficient closed candles, no new high within tolerance, extension, declining volume ratio and efficiency, close below breakout reference, structural failure/retest, no accelerating OI/squeeze, acceptable rejection/distance/liquidity, and score/grade. Any configured veto blocks delivery.
 
 ## TRAPPED_LONGS_REVERSAL
 
-This is an experimental shadow-only hypothesis. Its intended sequence is:
+The baseline implementation evaluates breakout, at least two closed candles, close below breakout reference, failed retest, OI increase, rejection, no new high, liquidity and expiry. In the public baseline it is disabled for live Telegram delivery and remains an experimental/shadow contour. Do not use its score as evidence of a production signal.
 
-```text
-long-side extension/breakout
- → failure/rejection
- → failed retest
- → possible short reversal
-```
+## Scoring and grade
 
-Required diagnostic fields include:
+Baseline score uses bounded buckets and risk penalties; baseline engine grade is A at 80+, B at 65+, otherwise C. Climax/trapped-longs flag scores use their own `10 + 15×flags` cap and A/B thresholds. Public delivery policy may require grade B or better and can veto a candidate independently.
 
-- `breakout_reference` — structural breakout level;
-- `failed_retest_high` — highest observed retest/event high used for diagnosis;
-- `decision_price` — price at evaluation;
-- `event_high` — event high;
-- `entry_reference` — the explicit reference used for distance diagnostics, not a presentation band;
-- entry/chase classification;
-- OI sequence classification;
-- failed-retest quality;
-- shadow quality score and breakdown.
+## Non-actionable paths
 
-### Lifecycle invariants
+- `WATCH`: candidate withheld by admission or veto; no manual short instruction.
+- `EARLY_DROP_WARNING`: separate multi-factor warning; does not enter short admission.
+- shadow evaluation: telemetry for research; not a Telegram signal.
+- `NO_SETUP`: only after `SCANNED_OK`.
 
-For Strategy 4 only:
+## Release overlay
 
-```text
-decision_time < confirmation_expires_at
-confirmation_expires_at > attempt_created_at
-```
-
-If the decision is after expiry, the result is blocked with:
-
-```text
-CONFIRMATION_WINDOW_EXPIRED
-```
-
-If the attempt is born expired, the result includes:
-
-```text
-BORN_EXPIRED_ATTEMPT
-```
-
-The implementation must not extend the window, re-arm an expired root, or create a replacement window.
-
-### Current evidence limits
-
-The existing failed-retest predicate is diagnostic shape evidence (`PREDICATE_SHAPE_ONLY`), not proof of a structurally valid retest. Existing OI logic is directional and does not prove persistence through breakout, failure and decision. Score saturation is a research defect, not a reason to change thresholds blindly.
-
-The `breakout_reference * 0.99 … * 1.01` presentation band must not be described as an admission zone unless the code contract explicitly makes it one.
-
-## Scoring and grades
-
-Scores are strategy-specific. A high score indicates that configured booleans/bonuses passed; it is not a calibrated probability, expected return or guarantee. Grade is a presentation/admission tier and does not override hard vetoes.
-
-Do not tune thresholds from a small set of failed signals. Use time-ordered, cost-aware, out-of-sample evidence.
+The operator-reported production release is Lane A `bf47d2b1` with Lane B disabled. Lane B `dfcdb9df` is documented as historical/experimental. Thresholds must be read from the pinned effective release configuration, not copied from this baseline narrative.

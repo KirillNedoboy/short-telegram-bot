@@ -6,7 +6,7 @@
 - Classification: `PARITY_PASS_BACKFILL_PROBE_ONLY`
 - Original Phase 6 SHA: `aa975526b306a0df86d211fe09a172f8b9eb4063`
 - Phase 6 code SHA: `a51b006602a16978e6e25287b8bbb540a2aa603a`
-- Production release: `/opt/short-telegram-bot-lite-admin/releases/a51b006602a16978e6e25287b8bbb540a2aa603a`
+- Production release: `<PRIVATE_ADMIN_ROOT>/releases/a51b006602a16978e6e25287b8bbb540a2aa603a`
 - REST canonical: `YES`; WS shadow: `YES`; production automatic backfill: `OFF`.
 
 ## Serialization fix and source

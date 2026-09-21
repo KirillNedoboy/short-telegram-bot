@@ -12,8 +12,8 @@ or unsupported platform logs its identity, path, and reason, returns exit code
 serialize tasks inside the winning process.
 
 The production unit was inspected read-only over SSH.
-It matches the checked-in example: `Type=simple`, `WorkingDirectory=/opt/short-telegram-bot-lite`,
-`ExecStart=/opt/short-telegram-bot-lite/.venv/bin/python scripts/run_live.py`,
+It matches the checked-in example: `Type=simple`, `WorkingDirectory=<APP_ROOT>`,
+`ExecStart=<APP_ROOT>/.venv/bin/python scripts/run_live.py`,
 `Restart=always`, `RestartSec=10`, `User=root`, `KillSignal=15`, and
 `TimeoutStopUSec=1min 30s`. No unit file was changed. A systemd restart can
 therefore overlap only if the old process has not exited; the Linux fence rejects

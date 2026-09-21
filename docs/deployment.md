@@ -4,18 +4,18 @@ This document describes the current server deployment without including server s
 
 ## Local/server layout
 
-- Project path: `/opt/short-telegram-bot-lite`
-- Python runtime: `/opt/short-telegram-bot-lite/.venv/bin/python`
+- Project path: `<APP_ROOT>`
+- Python runtime: `<APP_ROOT>/.venv/bin/python`
 - Live entrypoint: `scripts/run_live.py`
 - One-shot entrypoint: `scripts/run_once.py`
 - Default state database: `data/bot.sqlite`
-- Environment file: `/opt/short-telegram-bot-lite/.env` (never commit)
+- Environment file: `<APP_ROOT>/.env` (never commit)
 - systemd example: `deploy/short-telegram-bot-lite.service.example`
 
 ## Install
 
 ```bash
-cd /opt/short-telegram-bot-lite
+cd <APP_ROOT>
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 cp .env.example .env
@@ -42,7 +42,7 @@ journalctl -u short-telegram-bot-lite.service -n 100 --no-pager
 ## Safe update sequence
 
 ```bash
-cd /opt/short-telegram-bot-lite
+cd <APP_ROOT>
 git pull --ff-only origin main
 .venv/bin/pytest -q
 sudo systemctl restart short-telegram-bot-lite.service

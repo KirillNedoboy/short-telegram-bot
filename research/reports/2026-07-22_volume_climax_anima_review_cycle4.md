@@ -1,6 +1,6 @@
 # Anima Review Cycle 4: `VOLUME_CLIMAX_UNWIND`
 
-- **Repository:** `/opt/short-telegram-bot-lite`
+- **Repository:** `<APP_ROOT>`
 - **Review mode:** read-only research review after independent pre-admission patch
 - **Live admission:** unchanged
 - **Service restart:** no
@@ -14,7 +14,7 @@
 - `git diff --check`: pass.
 - Working tree contains an uncommitted patch in `app/main.py`, `app/signals/climax.py`, `app/storage/repository.py`, and related tests.
 - The running systemd process is PID `128948`, started **2026-07-22 08:09:34 UTC**. It was not restarted for this review, so its runtime behavior cannot be attributed to the current working-tree patch.
-- Read-only SQLite inspection of `/opt/short-telegram-bot-lite/data/bot.sqlite` found **0** `volume_climax:%` attempts and **0** `LIVE_REJECTED_SHADOW_FALLBACK_READY` evaluations. This is absence of observed runtime evidence, not proof that the code path cannot work.
+- Read-only SQLite inspection of `<APP_ROOT>/data/bot.sqlite` found **0** `volume_climax:%` attempts and **0** `LIVE_REJECTED_SHADOW_FALLBACK_READY` evaluations. This is absence of observed runtime evidence, not proof that the code path cannot work.
 
 ## What improved at code level since Cycles 1–3
 

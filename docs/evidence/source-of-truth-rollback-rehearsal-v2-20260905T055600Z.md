@@ -17,7 +17,7 @@ restarted and its database was never opened writable.
 - Local `main` was clean before and after the rehearsal.
 - Legacy source: `261646f7e7653957438dee54b38a23104f35c4ea`.
 - Immutable release:
-  `/opt/short-telegram-bot-lite-admin/releases/261646f7e7653957438dee54b38a23104f35c4ea-legacy/`.
+  `<PRIVATE_ADMIN_ROOT>/releases/261646f7e7653957438dee54b38a23104f35c4ea-legacy/`.
 - Deterministic source archive SHA-256:
   `e8b11e88404717bee81bbc4a2c30ad4c01ade9acb3b7711e200c8cb8893304a9`.
 - Release manifest SHA-256:
@@ -26,7 +26,7 @@ restarted and its database was never opened writable.
 ## Fresh disposable copy
 
 - Path:
-  `/opt/short-telegram-bot-lite-admin/work/legacy-rollback-rehearsal-v2-20260905T054100Z/bot.sqlite`.
+  `<PRIVATE_ADMIN_ROOT>/work/legacy-rollback-rehearsal-v2-20260905T054100Z/bot.sqlite`.
 - Size: `3,566,133,248` bytes.
 - SHA-256:
   `729ce0004989770f58ac4207c098577dc9bd84b499d473d979661153004fb239`.
@@ -89,7 +89,7 @@ restore and reconciliation were allowed.
 
 ## Rollback target and production invariants
 
-- Before: `legacy-current -> /opt/short-telegram-bot-lite` (dirty checkout).
+- Before: `legacy-current -> <APP_ROOT>` (dirty checkout).
 - After: `legacy-current -> .../261646f7e7653957438dee54b38a23104f35c4ea-legacy`.
 - `LEGACY_CHECKOUT_NOT_ROLLBACK_SOURCE` marker is present.
 - Production `current` remained:

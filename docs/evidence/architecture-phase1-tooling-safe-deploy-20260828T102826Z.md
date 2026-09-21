@@ -13,7 +13,7 @@
 ## Production before
 
 - Host: `lucky-white.ptr.network` / `138.124.108.146`.
-- Project: `/opt/short-telegram-bot-lite`.
+- Project: `<APP_ROOT>`.
 - HEAD: `261646f7e7653957438dee54b38a23104f35c4ea`.
 - Existing production status was preserved exactly:
 
@@ -36,13 +36,13 @@
 
 ## Admin release
 
-- Release: `/opt/short-telegram-bot-lite-admin/releases/ab4fd795e6d91885aee07e9538fea45d28c396d2`.
-- Stable current symlink: `/opt/short-telegram-bot-lite-admin/current`.
-- Research output root: `/opt/short-telegram-bot-lite-admin/research_archive/`.
+- Release: `<PRIVATE_ADMIN_ROOT>/releases/ab4fd795e6d91885aee07e9538fea45d28c396d2`.
+- Stable current symlink: `<PRIVATE_ADMIN_ROOT>/current`.
+- Research output root: `<PRIVATE_ADMIN_ROOT>/research_archive/`.
 - Bundle: 165 tracked files, 165 extracted files.
 - Bundle SHA-256: `b7519c6ba4fa1100fa69fec08d85faa3af25bb3708879ffa7fc6da20dc979d38`.
 - Representative hashes matched local manifest; forbidden paths found: 0; generated evidence packaged: `false`.
-- Research venv: `/opt/short-telegram-bot-lite-admin/releases/ab4fd795e6d91885aee07e9538fea45d28c396d2/.venv-research`.
+- Research venv: `<PRIVATE_ADMIN_ROOT>/releases/ab4fd795e6d91885aee07e9538fea45d28c396d2/.venv-research`.
 - Installed research dependencies: PyArrow 25.0.1 and DuckDB 1.5.5.
 - `include-system-site-packages=false`.
 - `app.research.archive` imported from the admin release; production checkout was absent from `sys.path`.
@@ -50,7 +50,7 @@
 ## Dependencies
 
 - Installed in the isolated research venv only from `requirements.txt` and `requirements-research.txt`.
-- `pip freeze` recorded at `/opt/short-telegram-bot-lite-admin/shared/evidence/ab4fd795e6d91885aee07e9538fea45d28c396d2/pip-freeze.txt`.
+- `pip freeze` recorded at `<PRIVATE_ADMIN_ROOT>/shared/evidence/ab4fd795e6d91885aee07e9538fea45d28c396d2/pip-freeze.txt`.
 - Ruff was not installed in the server venv; local Ruff validation passed.
 
 ## Tests
@@ -69,7 +69,7 @@
 - Inventory DB contract: `query_only=1`, `journal_mode=wal`, `source_unchanged=True`.
 - Bounded dry-run: **PASS**, table `reject_stats`, selected rows `2389`, status `DRY_RUN`.
 - Research output files after dry-run: 0.
-- Smoke evidence: `/opt/short-telegram-bot-lite-admin/shared/evidence/ab4fd795e6d91885aee07e9538fea45d28c396d2/`.
+- Smoke evidence: `<PRIVATE_ADMIN_ROOT>/shared/evidence/ab4fd795e6d91885aee07e9538fea45d28c396d2/`.
 - No archive publication, backup, DELETE, VACUUM, checkpoint, migration, Telegram, or systemd mutation was executed.
 
 ## Production after

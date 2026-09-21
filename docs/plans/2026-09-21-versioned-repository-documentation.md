@@ -1,6 +1,6 @@
 # Versioned Repository Documentation Plan
 
-> **For Hermes:** Execute this plan in the repository at `/root/work-short-telegram-bot`; preserve the source-of-truth boundaries in the approved design.
+> **For Hermes:** Execute this plan in the repository at `<WORKTREE>`; preserve the source-of-truth boundaries in the approved design.
 
 **Goal:** Turn the public repository into a complete, source-grounded technical and operational reference for the Short Telegram Bot.
 

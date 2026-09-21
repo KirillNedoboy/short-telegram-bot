@@ -31,7 +31,7 @@ not execute the real full-scan and fast-monitor loops.
 ## Migration rehearsal
 
 Canonical source:
-`/opt/short-telegram-bot-lite-admin/shared/snapshots/retention_20260902T133815Z.sqlite`.
+`<PRIVATE_ADMIN_ROOT>/shared/snapshots/retention_20260902T133815Z.sqlite`.
 It was copied to a disposable admin work directory and its SHA-256 matched:
 `0258ad4475753d2e8afadfcf2c7b788b8bfe87cf2e97919f67c7249fccf9a007`.
 

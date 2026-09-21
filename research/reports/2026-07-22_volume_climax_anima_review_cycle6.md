@@ -1,7 +1,7 @@
 # Anima Research Review Cycle 6: `VOLUME_CLIMAX_UNWIND`
 
 - **Run time:** 2026-07-22T16:49:34Z
-- **Repository:** `/opt/short-telegram-bot-lite`
+- **Repository:** `<APP_ROOT>`
 - **Reviewed baseline:** `a4160e4` plus the current uncommitted strict candidate/liquidity patch
 - **Review mode:** read-only; source, tests, systemd, and SQLite inspection
 - **Live admission:** unchanged
@@ -20,7 +20,7 @@ The current working tree is uncommitted in `app/main.py`, `app/signals/climax.py
 - `git diff --check`: exit `0`.
 - systemd: `ActiveState=active`, `SubState=running`, `MainPID=128948`, `NRestarts=0`, `ExecMainStatus=0`.
 - Journal since service start: 2,263 lines; `Traceback=0`, `Exception=0`, `poll_error=0`, `poll_start=928`, `poll_complete=1069`, `Cycle complete=129`.
-- Read-only SQLite `/opt/short-telegram-bot-lite/data/bot.sqlite`: `integrity_check=ok`, `journal_mode=wal`.
+- Read-only SQLite `<APP_ROOT>/data/bot.sqlite`: `integrity_check=ok`, `journal_mode=wal`.
 - Current totals: `climax_evaluations=8,392`, `climax_root_events=214`, `climax_entry_attempts=278`, `climax_entry_attempt_events=1,114`, `signals=93`.
 - Runtime DB has **0** `volume_climax:%` attempts and **0** `LIVE_REJECTED_SHADOW_FALLBACK_READY` evaluations. Decision deltas: `UNCHANGED_REJECTED=7,862`, `LIVE_REJECTED_SHADOW_ACTIONABLE=38`, `UNCHANGED_ACTIONABLE=1`, `NULL=491`.
 - Attempt states: `BREAKDOWN_PENDING=128`, `EXPIRED=50`, `RETEST_IN_PROGRESS=28`, `ROOT_REPLACED=63`, `SHADOW_ACTIONABLE=9`.

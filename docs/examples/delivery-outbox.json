@@ -1,0 +1,9 @@
+{
+  "outbox_id": "example-outbox-001",
+  "kind": "SIGNAL",
+  "state": "SENT",
+  "attempts": 1,
+  "idempotency_key": "example-signal-001",
+  "destination": "[REDACTED]",
+  "provider_message_id": "[REDACTED]"
+}

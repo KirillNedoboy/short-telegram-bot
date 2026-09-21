@@ -1,7 +1,7 @@
 # Anima Review Cycle 2: `VOLUME_CLIMAX_UNWIND`
 
 - **Run time:** 2026-07-22T16:05Z
-- **Repository:** `/opt/short-telegram-bot-lite`
+- **Repository:** `<APP_ROOT>`
 - **Baseline:** `a4160e4c099a02118e1c27bc7a2619bc255e235a`
 - **Review mode:** read-only multi-interpretation review after local revise patch
 - **Live admission:** unchanged

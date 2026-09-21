@@ -1,6 +1,6 @@
 # Anima Review Cycle 3: `VOLUME_CLIMAX_UNWIND`
 
-- **Repository:** `/opt/short-telegram-bot-lite`
+- **Repository:** `<APP_ROOT>`
 - **Baseline:** `a4160e4c099a02118e1c27bc7a2619bc255e235a`
 - **Review mode:** read-only multi-interpretation review after admission/fail-closed patch
 - **Service restart:** no
