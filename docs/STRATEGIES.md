@@ -39,4 +39,4 @@ Baseline score uses bounded buckets and risk penalties; baseline engine grade is
 
 ## Release overlay
 
-The operator-reported production release is Lane A `bf47d2b1` with Lane B disabled. Lane B `dfcdb9df` is documented as historical/experimental. Thresholds must be read from the pinned effective release configuration, not copied from this baseline narrative.
+The current operator-verified topology runs Lane A `bf47d2b1` and Lane B `dfcdb9df` simultaneously in isolated contours. Lane A is the primary production lane. Lane B contains the split climax evaluators and keeps `TRAPPED_LONGS_REVERSAL` live delivery disabled in its effective configuration. Thresholds must be read from the pinned effective release configuration, not copied from this baseline narrative.

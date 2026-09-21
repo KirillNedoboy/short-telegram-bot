@@ -19,7 +19,7 @@ Start with [`docs/SOURCE_OF_TRUTH.md`](docs/SOURCE_OF_TRUTH.md). The public chec
 - [Testing and reproducibility](docs/TESTING.md)
 - [Sanitized examples](docs/examples/README.md)
 
-The repository is a signal and research system. It does not place live orders, enable copy-trading, or provide autoexecution. Ordinary short notifications are manual-entry only. `EARLY_DROP_WARNING` and `WATCH` are non-actionable and never enter ordinary short admission.
+The repository is a signal and research system. It does not place live orders, enable copy-trading, or provide autoexecution. Ordinary short notifications are manual-entry only. The current operator-verified topology runs Lane A and Lane B simultaneously in isolated release/config/database contours. `EARLY_DROP_WARNING` and `WATCH` are non-actionable and never enter ordinary short admission.
 
 A Bybit USDT-perpetual market-monitoring bot that detects short-side reversal and exhaustion setups, persists decisions in SQLite, and delivers human-readable Telegram alerts. **It is a signal and research system, not an order-execution engine.**
 

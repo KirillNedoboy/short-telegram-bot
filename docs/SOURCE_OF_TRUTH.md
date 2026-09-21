@@ -17,7 +17,7 @@ This document prevents the public GitHub checkout, a server release, and researc
 |---|---|---:|---|---|
 | Public GitHub baseline | `ce77d744` | 2026-09-08 | Baseline-verified | Source files and tests in this repository |
 | Lane A production | `bf47d2b1d2b0b159da780dc337adefe3dcd2b6e71c13c2506721c4c816be92ea` | 2026-09-14 | Production-reported | External operator release artifact; not a Git object in this clone |
-| Lane B | `dfcdb9df3e6c6a3667fa914e3ea0189f7a6f8e35db43ac530ba8db51b69f7553` | 2026-09-17 | Historical/experimental | External operator release artifact; inactive and not a Git object here |
+| Lane B | `dfcdb9df3e6c6a3667fa914e3ea0189f7a6f8e35db43ac530ba8db51b69f7553` | 2026-09-17 | Active secondary lane / experimental | External operator release artifact; not a Git object here; isolated config/database |
 
 The short identifiers are documentation aliases for the release identifiers above, not claims that those objects are reachable from `origin/main`.
 
@@ -33,16 +33,24 @@ The short identifiers are documentation aliases for the release identifiers abov
 | Deployment | `deploy/`, `docs/deployment.md` | Private operator runbook | Paths and credentials are intentionally abstracted here. |
 | Research/shadow | `research/`, `docs/SHADOW_VALIDATION.md` | Non-production | Never treat shadow observations as live signals. |
 
-## Current production boundary
+## Current production topology
 
-The operator-reported active configuration is Lane A `bf47d2b1` with:
+As of the latest operator verification, both isolated lanes are active simultaneously:
+
+- Lane A `bf47d2b1` — primary production lane;
+- Lane B `dfcdb9df` — secondary experimental lane.
+
+Lane A uses:
 
 - `shortlist_size: 100`;
 - `min_24h_volume: 5,000,000`;
 - `AUTOEXECUTION=OFF`;
 - manual entry only;
-- Lane B inactive;
 - `EARLY_DROP_WARNING` as a separate non-actionable stream.
+
+Lane B uses its own release/config/database contour, a 50-symbol / `$5M` shortlist mode, and the split climax evaluators. Its `TRAPPED_LONGS_REVERSAL` evaluator is enabled, while `trapped_longs_live_delivery_enabled` remains false in the effective B configuration.
+
+The two lanes must not share a database, limiter, routing configuration, or release working directory.
 
 The later `111`-symbol / `$3M` candidate is not current production. Its rollout was stopped after incomplete-data and cycle-capacity observations.
 
